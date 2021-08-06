@@ -23,12 +23,16 @@ from array import array
 import libtiepie
 from printinfo import *  #from github check for other files on error
 import numpy as np
+import fdm
+import ook
 
 
 
 
 N = 20000
 data = np.zeros(N)
+method = fdm.FDM() #switch to ook.OOK() for OOK
+data = array("f", method.encode())
 data = array("f", data)
 
 
@@ -153,4 +157,10 @@ if scp and gen:
 else:
     print("No device avaible for measurement")
     sys.exit(1)
+
+#############
+## TODO find better way to handle decode
+#############
+
+#print(method.decode(signal=data)) #TODO I think there needs to be done somethin
 sys.exit(0)

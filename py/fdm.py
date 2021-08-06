@@ -1,72 +1,262 @@
-import sys # for exit
+"""
+use in main via 
+
+``` python
+from <filename> import *
+```
+
+adapted from https://inst.eecs.berkeley.edu/~ee123/sp15/lab/lab6/Pre-Lab6-Intro-to-Digital-Communications.html
+https://www.cwnp.com/understanding-ofdm-part-2-2/ for baud rate
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import hilbert
-from scipy.signal import square
+plt.rcParams.update({'font.size': 22})
 from scipy.signal import find_peaks
 import scipy.fft as fft
-
-mode = "simple"  #TODO use class don't be lazy
-
-#generate data
-N = 1024
-fs = 25e+3 #best choose this atleast x2.3 highest fre
-ts = 1 / fs
-number_bits = 4
-bits = [ 1 if np.random.rand() > 0.5 else 0 for i in range(number_bits)]
-#bits = [1, 0, 1, 1]
-Nbit = N // len(bits)
-Amp = 5
-fc = 10e3
-df = 1e3 
-t = np.linspace(0, N * ts , N)
-lower = fc - df * number_bits // 2
-flist = [lower + df * k for k in range(len(bits))]
-
-y = np.zeros(N)
-
-if mode == "simple":
-
-    for k, bit in enumerate(bits):
-        y += Amp * bit * np.sin(2 * np.pi * t * (lower + df * k))
+import itertools #for bit combintatio testing
 
 
-#fre = fft.fftfreq(len(y), t[1] - t[0])
-#s = np.abs(fft.fft(y))
-#plt.plot(fre, s)
-#plt.plot(flist, [np.max(s) // 2 for _ in range(len(flist))], "ro")
-#plt.title("".join([str(i) for i in bits]))
-#plt.show()
+class _PrivateMethod:
+    """ private class will not be imported by default """
+    def __init__(self):
+        pass
+class Method:
+    def __init__(self):
+        self.fs = None
+        self.N = None
+        self.t = None
+        self.signal = None
+        print("Hi form method")
+        pass
+    def encode(self):
+        """ modulation scheme """
+        pass
+    def decode(self):
+        """ demodulation scheme """
+        pass
+    def plot(self):
+        """ plotting the encoded(?) signal"""
+        pass
+    def error_estimate(self):
+        pass
 
+class FDM:
+    def __init__(self, Ts=30e-03, fs=44000, fc=1800, df = 100, Nbits=10, generate=True):
+        """
+        Ts: symbol duration
+        fs: sampling rate
+        fc: carrier freq
+        df: offset freq
+        Nbits: number of bits per encode pass
+        generate: whether to genrate a bit array for use in encode, decode otherwise provide one in encode
+        """
 
+        self.Ts = Ts
+        self.Nbits = Nbits
+        self.fs = fs
+        self.fc = fc
+        self.df = df
+        self.baud = 1/self.Ts
+        self.lower = self.fc - self.Nbits // 2 * self.df
+        self.upper = self.fc + self.Nbits // 2 * self.df
+        self.Ns = int( self.fs / self.baud ) #number of samples points per symbol
+        self.N = self.Nbits * self.Ns
+        self.t = np.r_[0.0 : self.N] / self.fs
+        self.generate = generate
 
+        if generate:
+            self.bits = (np.random.rand(self.Nbits, 1) > 0.5).astype("int")
 
-if mode == "simple":
-    y = y  #dummy use np.loadtxt("path-to-file.txt") in prod
+    def encode(self, bits=None):
+        if np.all(bits) != None and not self.generate:
+            assert(len(bits) == self.Nbits)
+            self.bits = bits
+        self.signal = np.zeros(self.N)
+        for idx, bit in enumerate(self.bits):
+            self.signal += bit * np.sin(2 * np.pi * self.t * (self.lower + idx * self.df))
+        return self.signal
+
+    def decode(self, signal=None, testing=False):
+        """
+        signal: signal to decode make sure its the signal we generated from encode...
+                assuming same t is being used otherwise someone has to fix the spacing
+                does not save the modified state i.e. you need to save the result
+        returns: the decoded bits
+        """
+        temp = None
+        if np.all(signal) != None:
+            print("using user provided signal")
+            assert( signal.shape == self.signal.shape)
+            temp = self.signal.copy()
+            self.signal = signal
+
+        result = []
+        s = np.abs(fft.fft(self.signal))
+        idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
+        idx = idx[:len(idx) // 2] #only the postive part
+        freq = fft.fftfreq(len(s), self.t[1] - self.t[0])
+        freq = freq[:len(s) // 2]
+
+        EPSILON = 10
+        idx = list(idx)
+        idx.reverse()
+
+        for i in range( self.Nbits ):
+            if len(idx) < 1:
+                result.append(0)
+                continue
+            f = self.lower + self.df * i
+            if np.abs(freq[idx[-1]] - f) < EPSILON :
+                result.append(1)
+                idx.pop()
+            else:
+                result.append(0)
+        if testing:
+            assert(np.all(result == self.bits.flatten()))
+        if np.all(signal) != None and np.all(temp) != None:
+            self.signal = temp
+        return result
+
+    def plot(self):
+        assert( np.all(self.signal != None))
+        s = np.abs(fft.fft(self.signal))
+        idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
+        idx = idx[:len(idx) // 2] #only the postive part
+        freq = fft.fftfreq(len(s), self.t[1] - self.t[0])
+        freq = freq[:len(s) // 2]
+        s = s[:len(s) // 2]
+        plt.plot(freq, s)
+        plt.title("".join([str(b) for b in self.bits]))
+        for idx, bit in enumerate(self.bits):
+            plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
+        plt.xlim([self.lower - self.df * 5, self.upper + self.df * 5])
+        plt.show()
+
+    def error_estimate(self):
+        pass
+
+################
+## FDM SIMPLE ##
+################
+
+class _Simple:
+
+    def __init__(self):
+        self.Ts = 33e-03
+        self.Nbits = 10
+        self.fs = 44000
+        self.fc = 1800
+        self.df = 100
+        self.baud = 1/self.Ts
+        self.lower = self.fc - self.Nbits // 2 * self.df
+        self.upper = self.fc + self.Nbits // 2 * self.df
+        self.Ns = int( self.fs / self.baud ) #number of samples points per symbol
+        self.N = self.Nbits * self.Ns
+        self.bits = (np.random.rand(self.Nbits, 1) > 0.5).astype("int")
+        self.t = np.r_[0.0 : self.N] / self.fs
+
+    def encode(self, bits=None):
+        if np.all(bits) != None:
+            assert(len(bits) == self.Nbits)
+            self.bits = bits
+        self.signal = np.zeros(self.N)
+        for idx, bit in enumerate(self.bits):
+            self.signal += bit * np.sin(2 * np.pi * self.t * (self.lower + idx * self.df))
+        return self.signal
+
+    def decode(self, testing=False):
+        Ns = self.Ns
+        result = []
+        s = np.abs(fft.fft(self.signal))
+        idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
+        idx = idx[:len(idx) // 2] #only the postive part
+        freq = fft.fftfreq(len(s), self.t[1] - self.t[0])
+        freq = freq[:len(s) // 2]
+
+        EPSILON = 10
+        idx = list(idx)
+        idx.reverse()
+
+        for i in range( self.Nbits ):
+            if len(idx) < 1:
+                result.append(0)
+                continue
+            f = self.lower + self.df * i
+            if np.abs(freq[idx[-1]] - f) < EPSILON :
+                result.append(1)
+                idx.pop()
+            else:
+                result.append(0)
+        #comment this out for testing
+        #print("in: ", self.bits.flatten())
+        #print("out:", np.array(result))
+        #print("in == out", np.all(result == self.bits.flatten()))
+        if testing :
+            assert(np.all(result == self.bits.flatten()))
+        return result
+
+    def plot(self):
+        assert( np.all(self.signal != None))
+        s = np.abs(fft.fft(self.signal))
+        idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
+        idx = idx[:len(idx) // 2] #only the postive part
+        freq = fft.fftfreq(len(s), self.t[1] - self.t[0])
+        freq = freq[:len(s) // 2]
+        s = s[:len(s) // 2]
+        plt.plot(freq, s)
+        plt.title("".join([str(b) for b in self.bits]))
+        for idx, bit in enumerate(self.bits):
+            plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
+        plt.xlim([self.lower - self.df * 5, self.upper + self.df * 5])
+        plt.show()
+
+def test_class(obj, Nbits=10):
+    print("Starting test...")
+    blist = list(itertools.product([0, 1], repeat=Nbits))
+    blist = np.array(blist)
+    ex = obj()
+    for bits in blist:
+        ex.encode(bits)
+        ex.decode(testing=True)
+    print("passed. All clear.")
+
+def plot_class(obj):
+    ex = obj()
+    ex.encode()
+    ex.decode()
+    ex.plot()
+
+def fdm_decode(signal, t, lower, df, Nbits, testing=False, bits=None):
     result = []
-    spectrum = np.abs(fft.fft(y))
-    freq = fft.fftfreq(len(spectrum), t[1] - t[0])
-    idx, prop = find_peaks(spectrum)
-    index = idx.copy()
-    idx = list(idx[: len(idx)//2]) #fftfreq returns something symmetric
-    #we need to know the frequency spacing from the transmitter in the receiver 
+    s = np.abs(fft.fft(signal))
+    idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
+    idx = idx[:len(idx) // 2] #only the postive part
+    freq = fft.fftfreq(len(s), t[1] - t[0])
+    freq = freq[:len(s) // 2]
+
+    EPSILON = 10
+    idx = list(idx)
     idx.reverse()
-    epsilon = 1 #some margin
-    for f in flist:
-        if len(idx) > 0:
-            print(freq[idx[-1]])
+
+    for i in range( Nbits ):
         if len(idx) < 1:
             result.append(0)
             continue
-        if np.abs(f - freq[idx[-1]]) < epsilon:
+        f = lower + df * i
+        if np.abs(freq[idx[-1]] - f) < EPSILON :
             result.append(1)
             idx.pop()
         else:
             result.append(0)
+    if testing and np.all(bits) != None:
+        assert(np.all(result == bits.flatten()))
+    return result
 
-    plt.plot(freq, spectrum)
-    plt.plot(freq[index], spectrum[index] // 2, "ro")
-    plt.title("in: {} result: {}".format(str(bits), str(result)))
-    plt.show()
-
+if __name__ == "__main__":
+    ex = FDM()
+    y = ex.encode()
+    x = ex.decode(signal=y)
+    #plot_class(_Simple)
 
