@@ -14,6 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 22})
 from scipy.signal import find_peaks
+import scipy.fft as fft
+import itertools
 
 
 class _PrivateMethod:
@@ -76,6 +78,13 @@ class OOK:
         self.signal = np.zeros(self.N)
         self.signal = self.M.ravel() * np.sin(2 * np.pi * self.fc * self.t)
         return self.signal
+    def testing_encode(self, bits):
+        assert(len(bits) == self.Nbits)
+        self.bits = bits
+        self.signal = np.zeros(self.N)
+        self.signal = self.M.ravel() * np.sin(2 * np.pi * self.fc * self.t)
+        return self.signal
+
 
     def decode(self):
         """ demodulation scheme 
@@ -134,9 +143,9 @@ class _Simple:
             idx, _ = find_peaks(self.signal[i * Ns : (i+1) * Ns])
             result.append( int( np.abs( len(idx) - count_peaks) < 1))
 
-        print("in: ", self.bits.flatten())
-        print("out:", np.array(result))
-        print("in == out", np.all(result == self.bits.flatten()))
+        #print("in: ", self.bits.flatten())
+        #print("out:", np.array(result))
+        #print("in == out", np.all(result == self.bits.flatten()))
         #assert(np.all(result == self.bits.flatten()))
         return result
     def plot(self):
@@ -148,13 +157,15 @@ class _Simple:
             plt.vlines(idx * self.Ts, -1.1, 1.1, "r")
         plt.show()
 
-def test_class(obj):
+def test_class(obj, Nbits=10):
     """
     Special Case [0, 0, ..., 0, 0, 1] does not work..
     """
-    for _ in range(100):
-        ex = obj()
-        ex.encode()
+    blist = list(itertools.product([0, 1], repeat=Nbits))
+    blist = np.array(blist)
+    ex = obj()
+    for bits in blist:
+        ex.testing_encode(bits)
         ex.decode()
 def plot_class(obj):
     ex = obj()
@@ -177,6 +188,10 @@ class _SimpleExp(_Simple):
         self.signal = self.M.ravel() * temp * np.sin(2 * np.pi * self.fc * self.t)
         plt.plot(self.t, temp, "g--")
         return self.signal
+    def plot_spectrum(self):
+        f = np.r_[0: self.N/2.0] / self.N * self.fs
+        s = fft.fft(self.signal)
+        plt.plot(f, np.abs(s[:len(s) //2]))
+        plt.show()
 
-plot_class(_SimpleExp)
 

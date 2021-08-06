@@ -6,3 +6,9 @@ matlab/ contains the matlab impl TODO...
 misc/ contains test functions and WIP
 
 data/ contains example data
+
+# Installation
+
+```
+pip install -r requirements.txt
+```
