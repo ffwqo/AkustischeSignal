@@ -78,6 +78,7 @@ class OOK:
         self.signal = np.zeros(self.N)
         self.signal = self.M.ravel() * np.sin(2 * np.pi * self.fc * self.t)
         return self.signal
+
     def testing_encode(self, bits):
         assert(len(bits) == self.Nbits)
         self.bits = bits
@@ -86,10 +87,15 @@ class OOK:
         return self.signal
 
 
-    def decode(self):
+    def decode(self, signal=None):
         """ demodulation scheme 
         returns the transmitted bits
         """
+        temp = None
+        if np.all(signal) != None:
+            assert(signal.shape == self.signal.shape)
+            temp = self.signal.copy()
+            self.signal = signal
         Ns = self.Ns
         result = []
         count_peaks = self.Ts / (1/self.fc)
@@ -100,6 +106,8 @@ class OOK:
         print("in: ", self.bits.flatten())
         print("out: ", np.array(result))
         print("in == out", np.all(result == self.bits.flatten()))
+        if np.all(signal) != None and np.all(temp) != None:
+            self.signal = temp
         return result
 
     def plot(self):
@@ -174,7 +182,7 @@ def plot_class(obj):
     ex.plot()
 
 
-class _SimpleExp(_Simple):
+class OOKSimpleExp(_Simple):
     def encode(self):
         def ampl(x, t, s=1.0): 
             """
