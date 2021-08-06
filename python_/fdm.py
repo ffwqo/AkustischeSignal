@@ -5,7 +5,7 @@ use in main via
 from <filename> import *
 ```
 
-from https://inst.eecs.berkeley.edu/~ee123/sp15/lab/lab6/Pre-Lab6-Intro-to-Digital-Communications.html
+adapted from https://inst.eecs.berkeley.edu/~ee123/sp15/lab/lab6/Pre-Lab6-Intro-to-Digital-Communications.html
 https://www.cwnp.com/understanding-ofdm-part-2-2/ for baud rate
 
 """
