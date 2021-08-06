@@ -21,7 +21,7 @@ import itertools #for bit combintatio testing
 # mapping table
 ####
 QAM = { (0,0) : 1+1j, (1,0) : 1-1j, (1,1): -1-1j, (0,1): -1+1j}
-QAM16 = { #TODO center this
+QAM16 = {
     (0,0,0,0) : -3-3j,
     (0,0,0,1) : -3-1j,
     (0,0,1,0) : -3+3j,
@@ -65,8 +65,8 @@ class Method:
     def error_estimate(self):
         pass
 
-class FDM:
-    def __init__(self, Ts=30e-03, fs=44000, fc=1800, df = 100, Nbits=10, generate=True):
+class OFDM:
+    def __init__(self, Ts=30e-03, fs=44000, fc=1800, df = 100, Nbits=12, generate=True):
         """
         Ts: symbol duration
         fs: sampling rate
@@ -92,12 +92,30 @@ class FDM:
     def encode(self, bits=None):
         """
             for convinence bits should be a multilpe of 2 or 4 or 6 since we are using
-            QAM or 16QAM. 
+            QAM or 16QAM. we are not going to bother with padding or checking anything else
+
+            bits also should not be larger than 2 * 40 or 4 * 40 since we are using 40 subcarries...
 
         """
         if np.all(bits) != None and not self.generate:
             assert(len(bits) == self.Nbits)
             self.bits = bits
+        assert( len(bits) & 2 == 0)
+        mode = len(bits) % 4 != 0
+        if mode:
+            mapping = QAM16
+            mode = 4
+        else:
+            mapping = QAM
+            mode = 2
+        def split(x, size):
+            t = []
+            for i in range(len(x) // size):
+                t.append(x[ i * size : (i+1) * size])
+            return t
+        tupleList = [tuple(s) for s in split(self.bits, mode)]
+        mappedBits = [ mapping[tup] for tup in tupleList]
+        numberOfSystem
 
         #mapping
         #pilots 
@@ -172,5 +190,4 @@ def plot_class(obj):
     ex.plot()
 
 if __file__ == "__main__":
-    plot_class(_Simple)
-
+    plot_class(OFDM)
