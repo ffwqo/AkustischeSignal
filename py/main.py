@@ -21,17 +21,17 @@ import os
 import sys
 from array import array
 import libtiepie
-from printinfo import *  #from github check for other files on error
+from .printinfo import *  #from github check for other files on error
 import numpy as np
-import fdm
-import ook
+from .fdm import FDM, test_class, plot_class
+from .ook import OOK, OOKSimpleExp, test_class, plot_class
 
 
 
 
 N = 20000
 data = np.zeros(N)
-method = fdm.FDM() #switch to ook.OOK() for OOK
+method = FDM() #switch to ook.OOK() for OOK
 data = array("f", method.encode())
 data = array("f", data)
 
