@@ -30,5 +30,8 @@ git add .
 git commit -m "Commit message"
 git push
 ```
+go on gitub on make a pull request.
+As a alternative use hub for command likne pull reuqests...
+
 
 
