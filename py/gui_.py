@@ -4,7 +4,19 @@ Plan:
     main_widget. The class also implements Method i.e. encode, decode, plot,
     error_estimate Call MeasurmentGui to insert the widget we can swap it on
     the fly and then restart the signal (perhaps check for changes?) 
+TODO
+    - [] ook widget
+    - [] fdm widget
+    - [] ofdm widget
+    - [] AWG parameters...
+    - [] implement the BLOCK / STREAM mode selection
 """
+import time 
+import os
+from array import array
+import libtiepie
+from printinfo import *
+
 import sys
 import matplotlib
 import numpy as np
@@ -108,20 +120,143 @@ class MeasurmentGui(QtWidgets.QMainWindow):
         self.vwidget.setLayout(self.vlayout)
         self.setCentralWidget(self.vwidget)
 
+        self._osci_setup()
         self.show()
     def start(self):
+        gen.start()
+        scp.start()
         pass
     def stop(self):
         pass
     def restart(self):
         pass
+    def _measurement(self):
+        #need to start this in thread I think...
+        #result = run(scp, gen)
+    def _gen_set_data(self, data):
+        try:
+            self.gen.set_data(data)
+        except:
+            print("Error cannot set gen data")
+            raise Exception
+
+    def _scp_gen_set_param(self):
+        """
+        Important! does not set data!!
+        """
+        try:
+            self.scp.measure_mode = self.measure_mode 
+            self.scp.sample_frequency = self.sample_frequency 
+            self.scp.record_length = self.record_length 
+
+            for ch in self.scp.channels:
+                ch.enabled = True
+                ch.range = 0
+                ch.coupling = libtiepie.CK_DCV
+
+            self.gen.signal_type = self.signal_type 
+            self.gen.frequency_mode = self.frequency_mode 
+            self.gen.frequency = self.gen_frequency 
+            self.gen.amplitude = self.gen_amp 
+            self.gen.offset = self.gen_offset 
+            self.gen.output_on = self.gen_ouput_on 
+        except:
+            print("Cannot set scp and gen data")
+            raise Exception
+    def _osci_setup(self, debug=False):
+        """
+        Initializes scp and gen but does not set any data for gen
+        Debug uses the printinfo library
+        """
+
+        if debug:
+            print_device_info()
+
+        libtiepie.network.auto_detect_enabled = True
+        libtiepie.device_list.update()
+
+        #TODO make gui elements for this
+        self.measure_mode = libtiepie.MM_BLOCK
+        self.sample_frequency = 20e3
+        self.record_length = 10000
+        self.signal_type = libtiepie.STB_ARBITRARY
+        self.frequency_mode = libtiepie.FMB_SAMPLEFREQUENCY
+        self.gen_frequency = 20e3
+        self.gen_amp = 4
+        self.gen_offset = 0
+        self.gen_ouput_on = True
+        self.scp_dict = {}
+        self.gen_dict = {}
+        self.mode_stringify = { libtiepie.MM_BLOCK : "BLOCK", libtiepie.MM_STREAM : "STRAM"}
+
+        scp = None
+        gen = None
+
+        #get for MM_BLOCK
+        for item in libtiepie.device_list:
+            if ( item.can_open(libtiepie.DEVICETYPE_OSCILLOSCOPE)) and (item.can_open(libtiepie.DEVICETYPE_GENERATOR)):
+                scp = item.open_oscilloscope()
+                if scp.measure_modes & libtiepie.MM_BLOCK:
+                    gen = item.open_generator()
+                    if gen.signal_type & libtiepie.ST_ARBITRARY:
+                        break
+                else:
+                    scp = None
+        if scp != None:
+            self.scp_dict[libtiepie.MM_BLOCK] = scp
+            self.gen_dict[libtiepie.MM_BLOCK] = gen
+        else:
+            print("SCP/GEN NOT FOUND FOR MM_BLOCK")
+        scp = None
+        gen = None
+        for item in libtiepie.device_list:
+            if ( item.can_open(libtiepie.DEVICETYPE_OSCILLOSCOPE)) and (item.can_open(libtiepie.DEVICETYPE_GENERATOR)):
+                scp = item.open_oscilloscope()
+                if scp.measure_modes & libtiepie.MM_STREAM:
+                    gen = item.open_generator()
+                    if gen.signal_type & libtiepie.ST_ARBITRARY:
+                        break
+                else:
+                    scp = None
+        if scp != None:
+            self.scp_dict[libtiepie.MM_STREAM] = scp
+            self.gen_dict[libtiepie.MM_STREAM] = gen
+        else:
+            print("SCP/GEN NOT FOUND FOR MM_STREAM")
+        if self.measure_mode in self.scp_dict:
+            self.scp = self.scp_dict[self.measure_mode]
+            self.gen = self.gen_dict[self.measure_mode]
+        else:
+            self.scp = None
+            self.gen = None
+
+        scp = self.scp #takes a reference
+        gen = self.gen
+
+
+        if scp and gen:
+            try:
+                self._scp_gen_set_param()
+                if debug:
+                    print_device_info(scp)
+                    print_device_info(gen)
+            except Exception as e:
+                print("Exception: " + str(e))
+                print(sys.exc_info()[0], flush=True)
+                sys.exit(1)
+        else:
+            print("No device avaible for measurement in", self.mode_stringify[self.measure_mode], "mode")
+            sys.exit(1)
+
+            
+
+
+
         
 
-class Exampole:
-    def __init__(self):
-        self.main_widget = QtWidgets.QPushButton("MAINWIDGET")
         
-ex = Test()
-a = MeasurmentGui(ex)
-app.exec_()
+if __name__ == "__main__":
+    ex = Test()
+    a = MeasurmentGui(ex)
+    app.exec_()
 

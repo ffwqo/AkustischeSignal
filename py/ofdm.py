@@ -1,27 +1,20 @@
 """
-use in main via 
+references: 
+    https://de.wikipedia.org/wiki/Orthogonales_Frequenzmultiplexverfahren
+    https://www.cwnp.com/understanding-ofdm-part-2-2/ 
+    https://dspillustrations.com/pages/posts/misc/python-ofdm-example.html
 
-``` python
-from <filename> import *
-```
-
-adapted from https://inst.eecs.berkeley.edu/~ee123/sp15/lab/lab6/Pre-Lab6-Intro-to-Digital-Communications.html
-https://www.cwnp.com/understanding-ofdm-part-2-2/ for baud rate
-
-"""
-"""
 TODO
 - [x] mapping
 - [] pilots 
-    => insert at every 6 data point a knwon value for channel estimation i.e 1+1j
+    => insert at every 6 data point a known value for channel estimation i.e 1+1j
 - [] fft
     => just signal = fft.ifft(dat)
 - [] cp
     => signal = np.append(signal, signal[ -len(signal) // 4 : ]  ?
-- [] guard?
+- [] guard do we need one?
     => done with cp otherwise just pad the signal with zeros. Need to figure
        out how extacle gen and scp receive/transmit signals here..
-- []
 
 """
 import numpy as np
