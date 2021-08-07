@@ -20,11 +20,11 @@ from array import array
 import libtiepie
 #from printinfo import * 
 import numpy as np
-import ook
-import fdm
+from .ook import OOK, OOKSimpleExp, test_class, plot_class
+from .fdm import FDM, test_class, plot_class
 
 
-method = fdm.FDM()
+method = FDM()
 
 N = 20000
 data = np.zeros(N)

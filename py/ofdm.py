@@ -9,7 +9,21 @@ adapted from https://inst.eecs.berkeley.edu/~ee123/sp15/lab/lab6/Pre-Lab6-Intro-
 https://www.cwnp.com/understanding-ofdm-part-2-2/ for baud rate
 
 """
+"""
+TODO
+- [x] mapping
+- [] pilots 
+    => insert at every 6 data point a knwon value for channel estimation i.e 1+1j
+- [] fft
+    => just signal = fft.ifft(dat)
+- [] cp
+    => signal = np.append(signal, signal[ -len(signal) // 4 : ]  ?
+- [] guard?
+    => done with cp otherwise just pad the signal with zeros. Need to figure
+       out how extacle gen and scp receive/transmit signals here..
+- []
 
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 22})
@@ -115,13 +129,7 @@ class OFDM:
             return t
         tupleList = [tuple(s) for s in split(self.bits, mode)]
         mappedBits = [ mapping[tup] for tup in tupleList]
-        numberOfSystem
 
-        #mapping
-        #pilots 
-        #fft
-        #cp
-        #guard?
         self.signal = np.zeros(self.N)
         for idx, bit in enumerate(self.bits):
             self.signal += bit * np.sin(2 * np.pi * self.t * (self.lower + idx * self.df))

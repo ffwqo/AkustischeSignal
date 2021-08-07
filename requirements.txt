@@ -2,7 +2,4 @@ numpy
 matplotlib
 scipy
 python-libtiepie
-#pyqt5
-#plotly
-#dash
-#bokeh
+pyqt5
