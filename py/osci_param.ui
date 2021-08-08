@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>291</width>
-    <height>430</height>
+    <width>389</width>
+    <height>463</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,13 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600; font-style:italic;&quot;&gt;Device settings&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <layout class="QFormLayout" name="formLayout_3">
        <item row="0" column="0">
@@ -115,11 +122,6 @@
        <item>
         <property name="text">
          <string>SAMPLEFREQUENCY</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>SIGNALFREQUENCY</string>
         </property>
        </item>
       </widget>

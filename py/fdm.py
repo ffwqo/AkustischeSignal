@@ -18,17 +18,8 @@ import scipy.fft as fft
 import itertools #for bit combintatio testing
 
 
-class _PrivateMethod:
-    """ private class will not be imported by default """
+class _ExampleMethod:
     def __init__(self):
-        pass
-class Method:
-    def __init__(self):
-        self.fs = None
-        self.N = None
-        self.t = None
-        self.signal = None
-        print("Hi form method")
         pass
     def encode(self):
         """ modulation scheme """
@@ -119,7 +110,7 @@ class FDM:
             self.signal = temp
         return result
 
-    def plot(self):
+    def plot(self, axis=None):
         assert( np.all(self.signal != None))
         s = np.abs(fft.fft(self.signal))
         idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
@@ -127,12 +118,21 @@ class FDM:
         freq = fft.fftfreq(len(s), self.t[1] - self.t[0])
         freq = freq[:len(s) // 2]
         s = s[:len(s) // 2]
-        plt.plot(freq, s)
-        plt.title("".join([str(b) for b in self.bits]))
-        for idx, bit in enumerate(self.bits):
-            plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
-        plt.xlim([self.lower - self.df * 5, self.upper + self.df * 5])
-        plt.show()
+
+        if axis != None:
+            axis.plot(freq, s)
+            axis.set_xlabel("f [Hz]")
+            axis.set_title("".join([str(b) for b in self.bits]))
+            for idx, bit in enumerate(self.bits):
+                axis.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
+            axis.set_xlim([self.lower - self.df * 5, self.upper + self.df * 5])
+        else:
+            plt.plot(freq, s)
+            plt.title("".join([str(b) for b in self.bits]))
+            for idx, bit in enumerate(self.bits):
+                plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
+            plt.xlim([self.lower - self.df * 5, self.upper + self.df * 5])
+            plt.show()
 
     def error_estimate(self):
         pass

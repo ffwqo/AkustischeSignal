@@ -1,10 +1,12 @@
 from PyQt5.QtWidgets import QPushButton, QWidget, QVBoxLayout, QApplication
 from PyQt5 import uic
+from PyQt5.QtCore import pyqtSignal
 
 class ValidationError(Exception):
     pass
 
 class OOKWidget(QWidget):
+    method_parameters_updated = pyqtSignal(dict)
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
@@ -27,6 +29,16 @@ class OOKWidget(QWidget):
         except ValidationError:
             print("ValidationError")
             return
+        result = { 
+                "mode" : "OOK",
+                "Ts" : self.Ts, 
+                "fs" : self.fs, 
+                "fc" : self.fc,
+                "bits": self.bits,
+                "Nbits": self.Nbits,
+                "generate": self.generate
+                }
+        self.method_parameters_updated.emit(result)
 
     def _validate_parameters(self):
 
@@ -34,7 +46,7 @@ class OOKWidget(QWidget):
         fs = self.widget.fsInput.text()
         fc = self.widget.fcInput.text()
         bits = self.widget.bitsInput.text()
-        Nbits = self.widget.NbitsInput.text()
+        Nbits = self.widget.NbitsInput.value()
         generate = self.widget.generateInput.isChecked()
 
         if Ts == "" or fs == "" or fc == "" or ( bits == "" and generate == False):
@@ -75,6 +87,7 @@ class OOKWidget(QWidget):
         if set(bits) != {"1", "0"} and not generate:
             print(' only "1" or "0" are valid characters for bits ')
             raise ValidationError
+        bits = [int(b) for b in bits]
 
         print("Parameters set")
         self.Ts = Ts 
@@ -83,6 +96,25 @@ class OOKWidget(QWidget):
         self.bits = bits 
         self.Nbits = Nbits 
         self.generate = generate 
+
+    def set_ts(self, Ts):
+        self.Ts = Ts
+        self.widget.TsInput.setText(str(Ts))
+    def set_fs(self, fs):
+        self.fs = fs
+        self.widget.fsInput.setText(str(fs))
+    def set_fc(self, fc):
+        self.fc = fc
+        self.widget.fcInput.setText(str(fc))
+    def set_bits(self, bits):
+        self.bits = bits
+        self.widget.bitsInput.Text(str(bits))
+    def set_nbits(self, Nbits):
+        self.Nbits = Nbits
+        self.widget.NbitsInput.setText(str(Nbits))
+    def set_generate(self, generate):
+        self.generate = generate
+        self.widget.generateInput.setChecked(str(generate))
 
 if __name__ == "__main__":
     import sys
