@@ -28,7 +28,6 @@ class Method:
         self.N = None
         self.t = None
         self.signal = None
-        print("Hi form method")
         pass
     def encode(self):
         """ modulation scheme """

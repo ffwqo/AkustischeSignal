@@ -48,7 +48,7 @@ class Test(QtWidgets.QWidget):
         self.xdata = np.linspace(0, 10, 100)
         self.ydata = np.sin( self.k * 2 * np.pi * self.xdata)
         self.sc.axes.plot(self.xdata, self.ydata)
-        self.sc.axes.set_title("f: {}".format(self.k))
+        self.sc.axes.set_title(f"f: {self.k}")
         self.sc2.axes.plot(self.xdata, np.cos(self.k * 2 * np.pi * self.xdata))
         
         self.toolbar = NavigationToolbar2QT(self.sc, self)
@@ -81,13 +81,98 @@ class Test(QtWidgets.QWidget):
         self.sc.axes.cla()
         self.ydata = np.sin( self.k * 2 * np.pi * self.xdata)
         self.sc.axes.plot(self.xdata, self.ydata)
-        self.sc.axes.set_title("f: {}".format(self.k))
+        self.sc.axes.set_title(f"f: {self.k}")
         self.sc.draw()
 
 
 
 app = QtWidgets.QApplication(sys.argv)
 #w = MainWindow()
+
+
+class MeasurementTask(QtCore.QObject):
+    """
+    for use with QThread
+    do I need a mutex?
+    """
+    finished     = QtCore.pyqtSignal(np.ndarray)
+    finished_gen = QtCore.pyqtSignal()
+    progress     = QtCore.pyqtSignal()
+
+    def __init__(self, scp, gen, chunks, mode):
+        """
+        chunks: lsit of data chunks if mode is block chunks should be just
+                [data]
+        mode: either STREAM or BLOCk
+        """
+        QtCore.QObject.__init__(self)
+        self.scp = scp
+        self.gen = gen
+        assert( mode == "BLOCK" and len(chunks) == 1)
+        self.chunks = chunks
+        self.mode = mode
+        self.filename="measure_data.txt"
+
+    def run(self):
+
+        scp = self.scp
+        gen = self.gen
+        chunks = self.chunks
+        mode = self.mode
+        result = []
+
+        try:
+            scp.start()
+
+            for i in range(len(chunks)):
+                gen.set_data(chunks[i])
+                gen.start()
+
+                while not (scp.is_data_ready or scp.is_data_overflow):
+                    time.sleep(0.01)
+                if scp.is_data_overflow:
+                    print("Data overflow")
+                d = np.array(scp.get_data())
+                """
+                scp returns data like 
+                     --------->
+                #Ch1 | 2 3 5 6 
+                #Ch2 | 2 -3 -2 -2
+                     V
+                result[i] looks like
+                | 2 2
+                | 3 -3
+                | 5 -2
+                V 6  -2
+                """
+                result.append(d.transpose())
+                gen.stop()
+            
+            self.finished_gen.emit()
+            scp.stop()
+
+            #result will be a list of data arrays need to append them each other
+            #TODO might have to transpose first
+            #TODO need to figure out the right order here
+            data = np.concatenate(result)
+
+            header = ""
+            filename = self.filename
+            i = 0
+            while os.path.isfile(filename):
+                filename = f"measure_data_{i}_{mode}.txt"
+                i += 1
+
+
+            for i in range(len(scp.channels)):
+                header += f"Ch{i+1}\t"
+            np.savetxt(filename, np.array(data).transpose(), header=header)
+        except:
+            print("Cannot start measurement")
+            raise Exception
+        self.finished.emit(result)
+        pass
+
 
 
 
@@ -120,11 +205,11 @@ class MeasurmentGui(QtWidgets.QMainWindow):
         self.vwidget.setLayout(self.vlayout)
         self.setCentralWidget(self.vwidget)
 
-        self._osci_setup()
+        #self._osci_setup()
         self.show()
     def start(self):
-        gen.start()
-        scp.start()
+        self.gen.start()
+        self.scp.start()
         pass
     def stop(self):
         pass
@@ -133,6 +218,7 @@ class MeasurmentGui(QtWidgets.QMainWindow):
     def _measurement(self):
         #need to start this in thread I think...
         #result = run(scp, gen)
+        pass
     def _gen_set_data(self, data):
         try:
             self.gen.set_data(data)
