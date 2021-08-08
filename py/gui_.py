@@ -6,14 +6,14 @@ Plan:
     the fly and then restart the signal (perhaps check for changes?) 
 TODO
     - [x] ook widget
-        - [] plotting?
+        - [x] plotting?
             => Method.plot(axis) handles plotting the main widget handles the canvas.
     - [x] fdm widget
-        - [] plotting?
+        - [x] plotting?
     - [] ofdm widget
         - [] plotting?
     - [x] AWG parameters...
-    - [] implement the BLOCK / STREAM mode selection
+    - [x] implement the BLOCK / STREAM mode selection
 """
 import time 
 import os

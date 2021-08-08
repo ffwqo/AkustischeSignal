@@ -16,6 +16,24 @@ pip install -r requirements.txt
 Make sure matlab is in $PATH refer to [Matlab API for python install](https://de.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html)
 to install the matlab engine for python for use in the py/ or python/ scripts
 
+# Run
+
+for gui
+```
+cd py
+python3 gui_.py
+```
+
+for terminal 
+```
+cd py
+python3 main.py
+//or BLOCK mode
+python3 main_block_mode.py
+```
+
+
+
 # Contribute
 
 after cloning create a new branch
