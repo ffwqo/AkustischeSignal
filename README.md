@@ -1,6 +1,8 @@
 
 py/ or python_/ contains the python impl
 
+python_terminal_mode/ contains the terminal app see below on how to run
+
 matlab/ contains the matlab impl TODO...
 
 misc/ contains test functions and WIP
