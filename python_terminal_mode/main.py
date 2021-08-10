@@ -10,7 +10,7 @@ import libtiepie
 from printinfo import *
 
 from ook import OOKSimpleExp
-from fdm import FDM
+from fdm import FDMSimple as FDM
 
 class State():
     def __init__(self):
