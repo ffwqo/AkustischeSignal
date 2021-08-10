@@ -3,3 +3,4 @@ matplotlib
 scipy
 python-libtiepie
 pyqt5
+click

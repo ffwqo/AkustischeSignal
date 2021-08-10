@@ -17,18 +17,8 @@ from scipy.signal import find_peaks
 import scipy.fft as fft
 import itertools
 
-
-class _PrivateMethod:
-    """ private class will not be imported by default """
+class _ExampleMethod:
     def __init__(self):
-        pass
-class Method:
-    def __init__(self):
-        self.fs = None
-        self.N = None
-        self.t = None
-        self.signal = None
-        print("Hi form method")
         pass
     def encode(self):
         """ modulation scheme """
@@ -56,11 +46,11 @@ class OOK:
         self.Nbits = Nbits
         self.fs = fs
         self.fc = fc
+        self.generate = generate
         self.baud = 1/self.Ts
         self.Ns = int( self.fs / self.baud ) #number of samples points per symbol
         self.N = self.Nbits * self.Ns
         self.t = np.r_[0.0 : self.N] / self.fs
-        self.generate = generate
 
         if generate:
             self.bits = (np.random.rand(self.Nbits, 1) > 0.5).astype("int")
@@ -110,14 +100,28 @@ class OOK:
             self.signal = temp
         return result
 
-    def plot(self):
+    def plot(self, axis=None):
         """ plotting the encoded(?) signal"""
+        if axis != None:
+            axis.plot(self.t, self.signal)
+            axis.set_xlabel("t [s]")
+            axis.set_title("".join([str(b) for b in self.bits]))
+            for idx, bit in enumerate(self.bits):
+                axis.vlines(idx * self.Ts, -1.1, 1.1, "r")
+        else:
+            plt.plot(self.t, self.signal)
+            plt.xlabel("t [s]")
+            plt.title("".join([str(b) for b in self.bits]))
+            for idx, bit in enumerate(self.bits):
+                plt.vlines(idx * self.Ts, -1.1, 1.1, "r")
+            plt.show()
+    def plot_encode(self, axis=None):
         plt.plot(self.t, self.signal)
         plt.xlabel("t [s]")
         plt.title("".join([str(b) for b in self.bits]))
         for idx, bit in enumerate(self.bits):
             plt.vlines(idx * self.Ts, -1.1, 1.1, "r")
-        plt.show()
+            plt.show()
 
     def error_estimate(self):
         pass

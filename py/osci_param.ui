@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>OsciParam</class>
+ <widget class="QWidget" name="OsciParam">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>389</width>
+    <height>463</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600; font-style:italic;&quot;&gt;Device settings&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QFormLayout" name="formLayout_3">
+       <item row="0" column="0">
+        <widget class="QLabel" name="scpmodeLabel">
+         <property name="toolTip">
+          <string>Measure Mode either STREAM or BLOCK</string>
+         </property>
+         <property name="text">
+          <string>Measure Mode</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="scpmodeInput">
+         <item>
+          <property name="text">
+           <string>BLOCK</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>STREAM</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="scpfsLabel">
+         <property name="toolTip">
+          <string>scp samping frequency</string>
+         </property>
+         <property name="text">
+          <string>fs [Hz]</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="scpfsInput"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="scprecordLabel">
+         <property name="toolTip">
+          <string>Record length of scp</string>
+         </property>
+         <property name="text">
+          <string>Record Length</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="scprecordInput"/>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="formLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="genSignalTypeLabel">
+       <property name="toolTip">
+        <string>Generator signal type should be arbitary</string>
+       </property>
+       <property name="text">
+        <string>Signal Type</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="genSignalTypeInput">
+       <item>
+        <property name="text">
+         <string>ARBITRARY </string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="genFreModeLabel">
+       <property name="toolTip">
+        <string>Generator sampling freqnencies mode</string>
+       </property>
+       <property name="text">
+        <string>Frequency Mode</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QComboBox" name="genFreModeInput">
+       <item>
+        <property name="text">
+         <string>SAMPLEFREQUENCY</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="genFrequencyLabel">
+       <property name="toolTip">
+        <string>Generator sample frequency</string>
+       </property>
+       <property name="text">
+        <string>f [Hz]</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="genFrequencyInput"/>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="genAmpLabel">
+       <property name="toolTip">
+        <string>Generator Amplitude</string>
+       </property>
+       <property name="text">
+        <string>Amp [V]</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="genAmpInput"/>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="genOffsetLabel">
+       <property name="toolTip">
+        <string>Generator Offset</string>
+       </property>
+       <property name="text">
+        <string>Offset</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="genOffsetInput"/>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="genOutputLabel">
+       <property name="toolTip">
+        <string>Generator output on</string>
+       </property>
+       <property name="text">
+        <string>Output on</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QCheckBox" name="genOutputonInput">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -15,3 +15,24 @@ pip install -r requirements.txt
 
 Make sure matlab is in $PATH refer to [Matlab API for python install](https://de.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html)
 to install the matlab engine for python for use in the py/ or python/ scripts
+
+# Run
+
+for gui
+```
+cd py
+python3 gui_.py
+```
+
+for terminal 
+```
+cd python_terminal_mode
+python3 main.py
+//or for help mode 
+python main.py --help 
+//or measurment with default values will plot by default
+python main.py ook 
+```
+
+
+
