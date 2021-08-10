@@ -14,6 +14,7 @@ class OOKWidget(QWidget):
         super(OOKWidget, self).__init__()
 
         self.widget = uic.loadUi("./ook_widget.ui")
+        self.widget.generateInput.clicked.connect(self._checked_clicked)
         ok_btn = QPushButton("Set Parameters")
         ok_btn.clicked.connect(self._ok_clicked)
         
@@ -21,6 +22,12 @@ class OOKWidget(QWidget):
         layout.addWidget(self.widget)
         layout.addWidget(ok_btn)
         self.setLayout(layout)
+
+    def _checked_clicked(self):
+        if self.widget.generateInput.isChecked():
+            self.widget.bitsInput.setDisabled(True)
+        else:
+            self.widget.bitsInput.setDisabled(False)
 
     def _ok_clicked(self):
 

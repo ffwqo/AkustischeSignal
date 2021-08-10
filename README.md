@@ -26,30 +26,13 @@ python3 gui_.py
 
 for terminal 
 ```
-cd py
+cd python_terminal_mode
 python3 main.py
-//or BLOCK mode
-python3 main_block_mode.py
+//or for help mode 
+python main.py --help 
+//or measurment with default values will plot by default
+python main.py ook 
 ```
-
-
-
-# Contribute
-
-after cloning create a new branch
-
-```
-git checkout -b YourBranch
-```
-make your changes and merge them
-
-```
-git add .
-git commit -m "Commit message"
-git push
-```
-go on gitub on make a pull request.
-As a alternative use hub for command likne pull reuqests...
 
 
 

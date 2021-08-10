@@ -18,21 +18,6 @@ import scipy.fft as fft
 import itertools #for bit combintatio testing
 
 
-class _ExampleMethod:
-    def __init__(self):
-        pass
-    def encode(self):
-        """ modulation scheme """
-        pass
-    def decode(self):
-        """ demodulation scheme """
-        pass
-    def plot(self):
-        """ plotting the encoded(?) signal"""
-        pass
-    def error_estimate(self):
-        pass
-
 class FDM:
     def __init__(self, Ts=30e-03, fs=44000, fc=1800, df = 100, Nbits=10, generate=True):
         """

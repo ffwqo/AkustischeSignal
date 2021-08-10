@@ -37,26 +37,32 @@ from osci_param_widget import OSCIWIDGET
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
+from pyqtgraph.widgets import MatplotlibWidget
+
 class InvalidModulationMode(Exception):
     pass
 
 class MplCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
+        fig = Figure()
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
 
+
+
 class PlotWindowWidget(QtWidgets.QWidget):
+    """
+    problem: random slow down and not plotting the data
+    alternative: just call plt.plot directly fuck integrating stuff
+
+    """
     def __init__(self, *args, **kwargs):
         super(PlotWindowWidget, self).__init__(*args, **kwargs)
         self.canvas = MplCanvas(self, width=4, height=4, dpi=120)
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
         layout = QtWidgets.QVBoxLayout()
-        btn = QtWidgets.QPushButton("Redraw")
-        btn.clicked.connect(self._update_draw)
         layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas)
-        layout.addWidget(btn)
         self.setLayout(layout)
 
     def plot_from_device(self, device):
@@ -67,9 +73,6 @@ class PlotWindowWidget(QtWidgets.QWidget):
         device.plot(self.canvas.axes)
         self.canvas.draw()
 
-    def _update_draw(self):
-        self.canvas.axes.cla()
-        self.canvas.draw()
 
 
 class Test(QtWidgets.QWidget):
@@ -211,10 +214,6 @@ class MeasurmentGui(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MeasurmentGui, self).__init__(*args, **kwargs)
         self.setWindowTitle("GUI -- MP2")
-        self.method_selection = QtWidgets.QComboBox()
-        self.method_selection.addItem("OOK")
-        self.method_selection.addItem("FDM")
-        self.method_selection.currentIndexChanged.connect(self._method_selection_callback)
         self._construct_param_ui()
         self._init_plot_area()
 
@@ -223,14 +222,86 @@ class MeasurmentGui(QtWidgets.QMainWindow):
         self._osci_setup()
         #self.setGeometry(0, 0, 600, 800)
         self.show()
-    def _init_plot_area(self):
-        self.input_plot_widget = PlotWindowWidget()
-        self.input_plot_widget.setWindowTitle("Input Signal Plot")
-        self.input_plot_widget.show()
+    def _construct_param_ui(self):
 
-        self.output_plot_widget = PlotWindowWidget()
-        self.output_plot_widget.setWindowTitle("Output Scp Plot")
-        self.output_plot_widget.show()
+        self.method_label = QtWidgets.QLabel("Modulation Method")
+        self.method_selection = QtWidgets.QComboBox()
+        self.method_selection.addItem("OOK")
+        self.method_selection.addItem("FDM")
+        self.method_selection.currentIndexChanged.connect(self._method_selection_changed)
+        self.method_selection_widget = QtWidgets.QWidget()
+
+        self.method_layout = QtWidgets.QHBoxLayout()
+        self.method_layout.addWidget(self.method_label)
+        self.method_layout.addWidget(self.method_selection)
+        self.method_selection_widget.setLayout(self.method_layout)
+
+        self.stack_widget = QtWidgets.QStackedWidget()
+        self.stack_widget.addWidget(OOKWidget())
+        self.stack_widget.addWidget(FDMWIDGET())
+        self.stack_widget.setCurrentIndex(self.method_selection.currentIndex())
+        for i in range(self.stack_widget.count()):
+            self.stack_widget.widget(i).method_parameters_updated.connect(self._modulation_parameters_updated)
+        self.method_widget = self.stack_widget.currentWidget()
+
+        line = QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.HLine)
+        line.setFrameShadow(QtWidgets.QFrame.Sunken)
+
+        self.paramlayout = QtWidgets.QVBoxLayout()
+        self.paramlayout.addWidget(self.method_selection_widget)
+        self.paramlayout.addWidget(line)
+        self.paramlayout.addWidget(self.stack_widget)
+        self.paramlayout.addWidget(line)
+
+        self.osci_param_widget = OSCIWIDGET()
+        self._osci_set_default_params()
+        self.osci_param_widget.parameters_updated.connect(self._osci_update_params)
+        self.paramlayout.addWidget(self.osci_param_widget)
+        self.paramlayout.addWidget(line)
+        self.paramWidget = QtWidgets.QWidget()
+        self.paramWidget.setLayout(self.paramlayout)
+
+        self.hlayout = QtWidgets.QHBoxLayout()
+        self.hwidget = QtWidgets.QWidget()
+        startButton  = QtWidgets.QPushButton("Start")
+        startButton.clicked.connect(self._start_measurement)
+        restartButton = QtWidgets.QPushButton("Restart")
+        restartButton.clicked.connect(self.restart)
+        stopButton = QtWidgets.QPushButton("Stop")
+        stopButton.clicked.connect(self.stop)
+        self.hlayout.addWidget(startButton)
+        self.hlayout.addWidget(restartButton)
+        self.hlayout.addWidget(stopButton)
+        self.hwidget.setLayout(self.hlayout)
+        self.paramlayout.addWidget(self.hwidget)
+
+        self.scroll_area = QtWidgets.QScrollArea()
+        self.scroll_area.setWidget(self.paramWidget)
+        width = self.paramWidget.width() + 40
+        self.scroll_area.setMinimumWidth(width)
+
+        self.main_widget  = QtWidgets.QWidget()
+        self.centerLayout = QtWidgets.QHBoxLayout()
+        self.centerLayout.addWidget(self.scroll_area)
+        line = QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.VLine)
+        line.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.centerLayout.addWidget(line)
+
+        self.main_widget.setLayout(self.centerLayout)
+
+
+        self.setCentralWidget(self.main_widget)
+    def _init_plot_area(self):
+        pass
+        #self.input_plot_widget = PlotWindowWidget()
+        #self.input_plot_widget.setWindowTitle("Input Signal Plot")
+        #self.input_plot_widget.show()
+
+        #self.output_plot_widget = PlotWindowWidget()
+        #self.output_plot_widget.setWindowTitle("Output Scp Plot")
+        #self.output_plot_widget.show()
 
     def _osci_set_default_params(self):
         self.measure_mode     = libtiepie.MM_BLOCK
@@ -278,79 +349,14 @@ class MeasurmentGui(QtWidgets.QMainWindow):
         for k, v in result.items():
             print(k, v)
 
-    def _construct_param_ui(self):
 
-        self.method_label = QtWidgets.QLabel("Modulation Method")
-        self.method_layout = QtWidgets.QHBoxLayout()
-        self.method_layout.addWidget(self.method_label)
-        self.method_layout.addWidget(self.method_selection)
-        self.method_selection_widget = QtWidgets.QWidget()
-        self.method_selection_widget.setLayout(self.method_layout)
-
-        if self.method_selection.currentText() == "OOK":
-            self.method_widget = OOKWidget()
-        elif self.method_selection.currentText() == "FDM":
-            self.method_widget = FDMWIDGET()
-        self.method_widget.method_parameters_updated.connect(self._modulation_parameters_updated)
-        line = QtWidgets.QFrame()
-        line.setFrameShape(QtWidgets.QFrame.HLine)
-        line.setFrameShadow(QtWidgets.QFrame.Sunken)
-
-        self.paramlayout = QtWidgets.QVBoxLayout()
-        self.paramlayout.addWidget(self.method_selection_widget)
-        self.paramlayout.addWidget(line)
-        self.paramlayout.addWidget(self.method_widget)
-        self.paramlayout.addWidget(line)
-
-        self.osci_param_widget = OSCIWIDGET()
-        self._osci_set_default_params()
-        self.osci_param_widget.parameters_updated.connect(self._osci_update_params)
-        self.paramlayout.addWidget(self.osci_param_widget)
-        self.paramlayout.addWidget(line)
-        self.paramWidget = QtWidgets.QWidget()
-        self.paramWidget.setLayout(self.paramlayout)
-
-        self.hlayout = QtWidgets.QHBoxLayout()
-        self.hwidget = QtWidgets.QWidget()
-        startButton = QtWidgets.QPushButton("Start")
-        startButton.clicked.connect(self._start_measurement)
-        restartButton = QtWidgets.QPushButton("Restart")
-        restartButton.clicked.connect(self.restart)
-        stopButton = QtWidgets.QPushButton("Stop")
-        stopButton.clicked.connect(self.stop)
-        self.hlayout.addWidget(startButton)
-        self.hlayout.addWidget(restartButton)
-        self.hlayout.addWidget(stopButton)
-        self.hwidget.setLayout(self.hlayout)
-        self.paramlayout.addWidget(self.hwidget)
-
-        self.main_widget =  QtWidgets.QWidget()
-        self.centerLayout = QtWidgets.QHBoxLayout()
-        self.centerLayout.addWidget(self.paramWidget)
-        line = QtWidgets.QFrame()
-        line.setFrameShape(QtWidgets.QFrame.VLine)
-        line.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.centerLayout.addWidget(line)
-
-        self.main_widget.setLayout(self.centerLayout)
-
-        self.scroll_area = QtWidgets.QScrollArea()
-        self.scroll_area.setWidget(self.main_widget)
-
-        self.setCentralWidget(self.scroll_area)
-
-    def _method_selection_callback(self):
-        if self.method_selection.currentText() == "OOK":
-            method_widget = OOKWidget()
-        elif self.method_selection.currentText() == "FDM":
-            method_widget = FDMWIDGET()
-        self.paramlayout.replaceWidget(self.method_widget, method_widget)
-        self.method_widget = method_widget
-        self._construct_param_ui()
+    def _method_selection_changed(self, i):
+        self.stack_widget.setCurrentIndex(i)
 
     def _start_measurement(self):
         print("Starting measurement")
         self._measurement()
+
     def stop(self):
         print("Stopping measurement")
         scp.stop()
@@ -374,8 +380,6 @@ class MeasurmentGui(QtWidgets.QMainWindow):
             Nbits = method_result["Nbits"]
             generate = method_result["generate"]
             bits = method_result["bits"]
-            for k, v in method_result.items():
-                print(k, v, type(v))
             self.method_device = OOK(Ts, fs, fc, Nbits, generate)
         elif method_result["mode"] == "FDM":
             Ts = method_result["Ts"]
@@ -393,7 +397,8 @@ class MeasurmentGui(QtWidgets.QMainWindow):
         if len(bits) < 1:
             bits = None
         self.input_signal = self.method_device.encode(bits)
-        self.input_plot_widget.plot_from_device(self.method_device)
+        self.method_device.plot_encode()
+        #self.input_plot_widget.plot_from_device(self.method_device)
         chunks = [self.input_signal] 
 
         self.worker = MeasurementTask(self.scp, self.gen, chunks, self.mode_stringify[self.measure_mode])
