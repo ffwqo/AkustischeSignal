@@ -95,19 +95,6 @@ class FDM:
             self.signal = temp
         return result
 
-    def plot_encode(self):
-        s = np.abs(fft.fft(self.signal))
-        idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
-        idx = idx[:len(idx) // 2] #only the postive part
-        freq = fft.fftfreq(len(s), self.t[1] - self.t[0])
-        freq = freq[:len(s) // 2]
-        s = s[:len(s) // 2]
-        plt.plot(freq, s)
-        plt.title("".join([str(b) for b in self.bits]))
-        for idx, bit in enumerate(self.bits):
-            plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
-        plt.xlim([self.lower - self.df * 5, self.upper + self.df * 5])
-        plt.show()
 
     def plot(self, axis=None):
         assert( np.all(self.signal != None))
@@ -140,7 +127,7 @@ class FDM:
 ## FDM SIMPLE ##
 ################
 
-class _Simple:
+class FDMSimple:
 
     def __init__(self):
         self.Ts = 33e-03
@@ -157,6 +144,20 @@ class _Simple:
         self.t = np.r_[0.0 : self.N] / self.fs
 
     def encode(self, bits=None):
+        temp = None
+        if np.all(bits != None):
+            temp = self.bits
+            assert(len(bits) == self.Nbits)
+            self.bits = bits
+        self.signal = np.zeros(self.N)
+        for idx, bit in enumerate(self.bits):
+            self.signal += bit * np.sin(2 * np.pi * self.t * (self.lower + idx * self.df))
+
+        if np.all(bits != None) and np.all(temp):
+            self.bits = temp
+        return self.signal
+
+    def _testing_encode(self, bits):
         if np.all(bits) != None:
             assert(len(bits) == self.Nbits)
             self.bits = bits
@@ -165,7 +166,15 @@ class _Simple:
             self.signal += bit * np.sin(2 * np.pi * self.t * (self.lower + idx * self.df))
         return self.signal
 
-    def decode(self, testing=False):
+    def decode(self, testing=False, signal=None, bits=None):
+        temp1 = None
+        temp2 = None
+        if np.all(bits) != None and np.all(signal !=None):
+            assert(len(bits) == len(self.bits))
+            assert(len(signal) == len(self.signal))
+            temp1, temp2 = self.signal, self.bits
+            self.signal, self.bits = signal, bits
+
         Ns = self.Ns
         result = []
         s = np.abs(fft.fft(self.signal))
@@ -194,9 +203,18 @@ class _Simple:
         #print("in == out", np.all(result == self.bits.flatten()))
         if testing :
             assert(np.all(result == self.bits.flatten()))
+        if np.all(bits) != None and np.all(signal !=None) and np.all(temp1 != None) and np.all(temp2 != None):
+            self.signal, self.bits = temp1, temp2
         return result
 
-    def plot(self):
+    def plot(self, signal=None, bits=None):
+        temp1 = None
+        temp2 = None
+        if np.all(bits) != None and np.all(signal !=None):
+            assert(len(bits) == len(self.bits))
+            assert(len(signal) == len(self.signal))
+            temp1, temp2 = self.signal, self.bits
+            self.signal, self.bits = signal, bits
         assert( np.all(self.signal != None))
         s = np.abs(fft.fft(self.signal))
         idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
@@ -210,6 +228,8 @@ class _Simple:
             plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
         plt.xlim([self.lower - self.df * 5, self.upper + self.df * 5])
         plt.show()
+        if np.all(bits) != None and np.all(signal !=None) and np.all(temp1 != None) and np.all(temp2 != None):
+            self.signal, self.bits = temp1, temp2
 
 def test_class(obj, Nbits=10):
     print("Starting test...")
@@ -217,7 +237,7 @@ def test_class(obj, Nbits=10):
     blist = np.array(blist)
     ex = obj()
     for bits in blist:
-        ex.encode(bits)
+        ex._testing_encode(bits)
         ex.decode(testing=True)
     print("passed. All clear.")
 
@@ -254,8 +274,6 @@ def fdm_decode(signal, t, lower, df, Nbits, testing=False, bits=None):
     return result
 
 if __name__ == "__main__":
-    ex = FDM()
-    y = ex.encode()
-    x = ex.decode(signal=y)
-    #plot_class(_Simple)
+    test_class(FDMSimple)
+    pass
 
