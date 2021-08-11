@@ -22,8 +22,8 @@ to install the matlab engine for python for use in the py/ or python/ scripts
 
 for gui
 ```
-cd py
-python3 gui_.py
+cd python_terminal_mode
+python3 main_gui.py
 ```
 
 for terminal 

@@ -1,340 +1,272 @@
-#TODO replace matplotlib with dearpygui.plot
-import matplotlib.pyplot as plt
-import click
-import sys
-import os
-import time
 import numpy as np
-from array import array
-import libtiepie
-from printinfo import *
-
+import scipy.fft as fft
+import dearpygui.dearpygui as dpg
+import dearpygui.logger as dpg_logger
+from util_def import *
 from ook import OOKSimpleExp
-from fdm import FDMSimple as FDM
+from fdm import FDM
+logger = dpg_logger.mvLogger()
+dpg.hide_item(logger.window_id)
 
-class State():
-    def __init__(self):
-        self.scp = None
-        self.gen = None
-        self.plot_flag = True
-        self.osci_config = None
-        self.osci_device = None
-        self.modulation_config = None
-        self.measurement = None
-        self.modulation_method = None
+with dpg.font_registry():
+    dpg.add_font("./SourceCodePro-Regular.ttf", 14, default_font=True)
 
-pass_state = click.make_pass_decorator(State)
+indent = 40
+storage = {}
+storage_ook = {}
+storage_fdm = {}
+var_name_id_map = {} #flow choose var_name_id_map to get the id depending on the name i.e. "scp_mode" and access storage
+var_name_id_map_ook = {}
+var_name_id_map_fdm = {}
 
-class MeasurmentFailure(Exception):
-    pass
-class ValidationError(Exception):
-    pass
-class Measurment():
-    """
-        to use first define your ModulationMethodClass()
-        then call encode and save the signal
-        signal = encode() or signal = encode(bits)
-        finally wrap signal around [signal] and init Measurment(scp, gen, chunks)
-        scp, gen come from OsciDevice.setup()
-    """
-    def __init__(self, scp, gen, chunks, config_dict):
-        assert(scp != None)
-        assert(gen != None)
-        assert(config_dict != None)
-        assert(len(chunks) ==1 and config_dict["mode"] == "BLOCK")
-        self.scp = scp
-        self.gen = gen
-        self.chunks = chunks
-        self.config_dict = config_dict
-        print("Starting measurment!")
-    def set_parameters_osci(self, osci_device, debug=False):
-        assert( isinstance(osci_device, OsciDevice))
-        if self.scp and self.gen:
-            try:
-                self.scp.measure_mode = osci_device.scp_mode          
-                self.scp.sample_frequency = osci_device.scp_fs            
-                self.scp.record_length = osci_device.scp_record_length 
-                for ch in self.scp.channels:
-                    ch.enabled = True
-                    ch.range = 8
-                    ch.coupling = libtiepie.CK_DCV
-
-                self.gen.signal_type    = osci_device.gen_signal_type
-                self.gen.frequency_mode = osci_device.gen_freq_mode
-                self.gen.frequency      = osci_device.gen_fs
-                self.gen.amplitude      = osci_device.gen_amp
-                self.gen.offset         = osci_device.gen_offset
-                self.gen.output_on      = osci_device.gen_output_on
-                if debug:
-                    print_device_info(self.scp)
-                    print_device_info(self.gen)
-            except Exception as e:
-                click.echo("Exception: " + str(e))
-                click.echo(sys.exc_info()[0])
-                return
-                #sys.exit(1)
-        click.echo("Successfully set osci parameters")
-
-    def run(self):
-        scp = self.scp
-        gen = self.gen
-        chunks = self.chunks
-        mode = self.config_dict["scp_mode"] #string
-        result = []
-        try:
-            scp.start()
-            for i in range(len(chunks)):
-                gen.set_data(chunks[i])
-                gen.start()
-
-                while not (scp.is_data_ready or scp.is_data_overflow):
-                    time.sleep(0.01)
-                if scp.is_data_overflow:
-                    click.echo("Data overflow")
-                d = np.array(scp.get_data())
-                """
-                scp returns data like 
-                     --------->
-                #Ch1 | 2 3 5 6 
-                #Ch2 | 2 -3 -2 -2
-                     V
-                result[i] looks like
-                | 2 2
-                | 3 -3
-                | 5 -2
-                V 6  -2
-                """
-                result.append(d.transpose())
-                gen.stop()
-            scp.stop()
-
-            #result will be a list of data arrays need to append them each other
-            #TODO might have to transpose first
-            #TODO need to figure out the right order here
-            data = np.concatenate(result)
-
-            header = ""
-            i = 0
-            filename = f"measure_data_{mode}.txt"
-            while os.path.isfile(filename):
-                filename = f"measure_data_{i}_{mode}.txt"
-                i += 1
-
-            for i in range(len(scp.channels)):
-                header += f"Ch{i+1}\t"
-            np.savetxt(filename, np.array(data).transpose(), header=header)
-        except:
-            click.echo("Cannot start measurement")
-            raise MeasurmentFailure
-        click.echo("Finished measurement")
-        return result
-
-class OsciDevice():
-    def __init__(self, config_dict):
-        assert(config_dict != None)
-
-        self.scp_mode_map            = { libtiepie.MM_BLOCK : "BLOCK", libtiepie.MM_STREAM : "STREAM"}
-        scp_mode_reverse_map    = { v: k for k,v in self.scp_mode_map.items()}
-        gen_signal_type_map = {"ARBITRARY" : libtiepie.ST_ARBITRARY}
-        gen_freq_mode_map   = {"SAMPLEFREQUENCY" : libtiepie.FM_SAMPLEFREQUENCY}
+header_modulation_method = dpg.generate_uuid()
+header_ook = dpg.generate_uuid()
+header_fdm = dpg.generate_uuid()
+log_checkbox_id = dpg.generate_uuid()
+state = State() #TODO don't think I need plot_flag
 
 
-        self.scp = None
-        self.gen = None
-        self.scp_mode          = scp_mode_reverse_map[config_dict["scp_mode"]] #grabs a libtiepie.MM_{BLOCK, STREAM}
-        self.scp_fs            = config_dict["scp_fs"]
-        self.scp_record_length = config_dict["scp_record_length"]
-        self.gen_signal_type   = gen_signal_type_map[config_dict["gen_signal_type"]]
-        self.gen_freq_mode     = gen_freq_mode_map[config_dict["gen_freq_mode"]]
-        self.gen_fs            = config_dict["gen_fs"]
-        self.gen_amp           = config_dict["gen_amp"]
-        self.gen_offset        = config_dict["gen_offset"]
-        self.gen_output_on    = config_dict["gen_output_on"]
-    def setup(self, debug=False):
-        if debug:
-            print_device_info()
-        libtiepie.network.auto_detect_enabled = True
-        libtiepie.device_list.update()
+def store_data(id, adata):
+    storage[id] = adata
+    logger.log(f"{storage}")
+def store_data_ook(id, adata):
+    storage_ook[id] = adata
+    logger.log(f"{storage_ook}")
 
-        self.scp_dict = {}
-        self.gen_dict = {}
-        scp = None
-        gen = None
+def store_data_fdm(id, adata):
+    storage_fdm[id] = adata
+    logger.log(f"{storage_fdm}")
 
-        #first scp+gen for MM_BLOCK
-        for item in libtiepie.device_list:
-            if ( item.can_open(libtiepie.DEVICETYPE_OSCILLOSCOPE)) and (item.can_open(libtiepie.DEVICETYPE_GENERATOR)):
-                scp = item.open_oscilloscope()
-                if scp.measure_modes & libtiepie.MM_BLOCK:
-                    gen = item.open_generator()
-                    if gen.signal_type & libtiepie.ST_ARBITRARY:
-                        break
-                else:
-                    scp = None
-        if scp != None:
-            self.scp_dict[libtiepie.MM_BLOCK] = scp
-            self.gen_dict[libtiepie.MM_BLOCK] = gen
-        else:
-            click.echo("SCP/GEN NOT FOUND FOR MM_BLOCK")
-        scp = None
-        gen = None
-        #then scp+gen for MM_STREAM
-        for item in libtiepie.device_list:
-            if ( item.can_open(libtiepie.DEVICETYPE_OSCILLOSCOPE)) and (item.can_open(libtiepie.DEVICETYPE_GENERATOR)):
-                scp = item.open_oscilloscope()
-                if scp.measure_modes & libtiepie.MM_STREAM:
-                    gen = item.open_generator()
-                    if gen.signal_type & libtiepie.ST_ARBITRARY:
-                        break
-                else:
-                    scp = None
-        if scp != None:
-            self.scp_dict[libtiepie.MM_STREAM] = scp
-            self.gen_dict[libtiepie.MM_STREAM] = gen
-        else:
-            click.echo("SCP/GEN NOT FOUND FOR MM_STREAM")
-
-        if self.scp_mode in self.scp_dict:
-            self.scp = self.scp_dict[self.scp_mode]
-            self.gen = self.gen_dict[self.scp_mode]
-        else:
-            self.scp = None
-            self.gen = None
-
-
-
-        if self.scp and self.gen:
-            try:
-                self.scp.measure_mode = self.scp_mode          
-                self.scp.sample_frequency = self.scp_fs            
-                self.scp.record_length = self.scp_record_length 
-                for ch in self.scp.channels:
-                    ch.enabled = True
-                    ch.range = 8
-                    ch.coupling = libtiepie.CK_DCV
-
-                self.gen.signal_type    = self.gen_signal_type
-                self.gen.frequency_mode = self.gen_freq_mode
-                self.gen.frequency      = self.gen_fs
-                self.gen.amplitude      = self.gen_amp
-                self.gen.offset         = self.gen_offset
-                self.gen.output_on      = self.gen_output_on
-                if debug:
-                    print_device_info(scp)
-                    print_device_info(gen)
-            except Exception as e:
-                click.echo("Exception: " + str(e))
-                click.echo(sys.exc_info()[0])
-                return
-                #sys.exit(1)
-        else:
-            click.echo("No device avaible for measurement in " + self.scp_mode_map[self.scp_mode] + " mode")
-        click.echo("Successfully set")
-        return self.scp, self.gen
-
-
-def validate_bit_string(kwargs):
-    bits = None
-    if kwargs["bits"] == "":
-        bits = None
+def validate_bit_string_ook(id, data):
+    if storage_ook[var_name_id_map_ook["generate"]] == True:
+        bits = np.array(None)
+        store_data_ook(id, bits)
+        return
+    print(data)
+    if data == "":
+        bits = np.array(None)
     else:
-        bits = list(kwargs["bits"])
-        if set(bits) != {"1", "0"} and not kwargs["generate"]:
+        bits = list(data)
+        if (set(bits) != {"1"} and set(bits) != {"0"} and set(bits) != {"1", "0"}):
             print(' only "1" or "0" are valid characters for bits ')
             raise ValidationError
-        bits = np.array(bits)
-    return bits
+            bits = np.array(None)
+        else:
+            bits = [int(b) for b in bits]
+            bits = np.array(bits)
+    print(bits)
+    store_data_ook(id, bits)
 
+def validate_bit_string_fdm(id, data):
+    if storage_fdm[var_name_id_map_fdm["generate"]] == True:
+        bits = np.array(None)
+        store_data_fdm(id, bits)
+        return
+    print(data)
+    if data == "":
+        bits = np.array(None)
+    else:
+        bits = list(data)
+        if (set(bits) != {"1"} and set(bits) != {"0"} and set(bits) != {"1", "0"}):
+            print(' only "1" or "0" are valid characters for bits ')
+            raise ValidationError
+            bits = np.array(None)
+        else:
+            bits = [int(b) for b in bits]
+            bits = np.array(bits)
+    print(bits)
+    store_data_fdm(id, bits)
 
+def save_osci_paramaters():
+    state.osci_config = { k : storage[v] for k,v in var_name_id_map.items()}
+    state.plot_flag = storage[var_name_id_map["plot_flag"]]
+    state.osci_device = OsciDevice(state.osci_config)
+    state.scp, state.gen = state.osci_device.setup()
+    dpg.show_item(header_modulation_method)
+    logger.log(f"osci_config: {state.osci_config}")
+    logger.log(f"after setup scp: {state.scp} gen: {state.gen}")
 
-CONTEXT_SETTINGS = dict(
-    show_default=True
-)
+def save_ook_parameter():
+    state.modulation_config = { k : storage_ook[v] for k,v in var_name_id_map_ook.items()}
+    method = OOKSimpleExp(
+            Ts = state.modulation_config["ts"],
+            fs = state.modulation_config["fs"],
+            fc = state.modulation_config["fc"],
+            Nbits = state.modulation_config["nbits"],
+            generate = state.modulation_config["generate"])
 
-#=============OSCI
-@click.group(context_settings=CONTEXT_SETTINGS, invoke_without_command=True)
-@click.option("--plot/--no-plot", default=True)
-@click.option("--stream", "scp_mode", flag_value="STREAM", help="scp STREAM mode")
-@click.option("--block", "scp_mode", flag_value="BLOCK", help="scp BLOCK mode", default=True)
-@click.option("--scp-fs", type=click.FLOAT, default=20e3, help="scp sampling rate fs")
-@click.option("--scp-record-length", type=click.INT, default=10000, help="scp record_length")
-@click.option("--gen-signal-type-ARBITRARY", "gen_signal_type", flag_value="ARBITRARY", help="generator signal type only ARBITRARY implemented [default]", default=True)
-@click.option("--gen-frequency-mode", "gen_freq_mode", flag_value="SAMPLEFREQUENCY", help="generator frequency mode only SAMPLEFREQUENCY implemented [default]", default=True)
-@click.option("--gen-fs", type=click.FLOAT, default=20e3, help="generator sampling rate")
-@click.option("--gen-amp", type=click.FLOAT, default=4.0, help="generator Amplitude")
-@click.option("--gen-offset", type=click.FLOAT, default=0.0, help="generator offet")
-@click.option("--gen-output-on", type=click.BOOL, default=True, help="generator Offset on")
-@click.pass_context
-def cli(ctx, plot, **kwargs):
-    ctx.obj = State()
-    ctx.obj.osci_config = kwargs
-    ctx.obj.osci_device = OsciDevice(kwargs)
-    ctx.obj.scp, ctx.obj.gen = ctx.obj.osci_device.setup()
-    ctx.obj.plot_flag = plot
-
-
-#=============OOK
-@cli.command()
-@click.option("--modulation-method", "modulation_method", flag_value="OOK", help="modulation method", default=True)
-@click.option("--ts", type=click.FLOAT, default=30e-03, help="symbol duration Ts")
-@click.option("--fs", type=click.FLOAT, default=44000, help="sampling rate fs")
-@click.option("--fc", type=click.FLOAT, default=1800, help="carrier frequency fc")
-@click.option("--nbits", type=click.INT, default=10, help="number of bits to encode")
-@click.option("--generate", type=click.BOOL, default=True, help="wether to randomly generate bits")
-@click.option("--bits", type=click.STRING, default="", help="bit sequence")
-@pass_state
-def ook(state, **kwargs):
-    state.modulation_config = kwargs 
-    method = OOKSimpleExp( Ts=kwargs["ts"], 
-            fs=kwargs["fs"],
-            fc=kwargs["fc"],
-            Nbits=kwargs["nbits"],
-            generate=kwargs["generate"])
-
-    bits = validate_bit_string(kwargs)
+    bits = state.modulation_config["bits"]
+    if bits == "":
+        bits = None
     signal = method.encode(bits)
-    if state.plot_flag == True :
-        method.plot(signal, bits)
-
-    config = {**kwargs, "scp_mode" : state.osci_config["scp_mode"]}
-    state.measurement = Measurment(state.scp, state.gen, [signal], config)
-    result = state.measurement.run()
+    if state.plot_flag:
+        with dpg.window(label="euikc"):
+            with dpg.plot(label="signal plot", width=800, height=800):
+                dpg.add_plot_legend()
+                dpg.add_plot_axis(dpg.mvXAxis, label="T [s]")
+                dpg.add_plot_axis(dpg.mvYAxis, label="Y")
+                dpg.add_line_series(method.t, signal, label="Encoded signal", parent=dpg.last_item())
+        pass
+    config = {**state.modulation_config, "scp_mode" : state.osci_config["scp_mode"]}
+    state.measurment = Measurment(state.scp, state.gen, [signal], config)
+    result = state.measurment.run()
     method.decode(result)
 
+    logger.log(f"modulation_config: {state.modulation_config}")
+    logger.log(f"method config: {config}")
+    logger.log(f"signal: {signal}")
+    logger.log(f"method internal bits: {method.bits}")
+    logger.log(f"result bits: {result}")
 
+def save_fdm_parameter():
+    state.modulation_config = { k : storage_fdm[v] for k,v in var_name_id_map_fdm.items()}
+    print(state.modulation_config)
+    method = FDM(
+            Ts = state.modulation_config["ts"],
+            fs = state.modulation_config["fs"],
+            fc = state.modulation_config["fc"],
+            df = state.modulation_config["df"],
+            Nbits = state.modulation_config["nbits"],
+            generate = state.modulation_config["generate"])
 
-#=============FDM
-@cli.command()
-@click.option("--modulation-method", "modulation_method", flag_value="FDM", help="modulation method", default=True)
-@click.option("--ts", type=click.FLOAT, default=30e-03, help="symbol duration Ts")
-@click.option("--fs", type=click.FLOAT, default=44000, help="sampling rate fs")
-@click.option("--fc", type=click.FLOAT, default=1800, help="carrier frequency fc")
-@click.option("--df", type=click.FLOAT, default=100, help="frequency spacing used")
-@click.option("--nbits", type=click.INT, default=10, help="number of bits to encode")
-@click.option("--generate", type=click.BOOL, default=True, help="wether to randomly generate bits")
-@click.option("--bits", type=click.STRING, default="", help="bit sequence")
-@pass_state
-def fdm(state, **kwargs):
-   #TODO check fdm.encdode fdm.decode implement with signal, bits 
-    state.modulation_config = kwargs 
-    method = FDM( Ts=kwargs["ts"], 
-            fs=kwargs["fs"],
-            fc=kwargs["fc"],
-            df=kwargs["df"],
-            Nbits=kwargs["nbits"],
-            generate=kwargs["generate"])
-
-    bits = validate_bit_string(kwargs)
+    bits = state.modulation_config["bits"]
+    if bits == "":
+        bits = None
     signal = method.encode(bits)
-    if state.plot_flag == True :
-        method.plot(signal, bits)
-
-    config = {**kwargs, "scp_mode" : state.osci_config["scp_mode"]}
-    state.measurement = Measurment(state.scp, state.gen, [signal], config)
-    result = state.measurement.run()
+    if state.plot_flag:
+        with dpg.window(label="euikc"):
+            with dpg.plot(label=f"bits: {list(method.bits.ravel())} spectrum plot", width=800, height=800):
+                t = method.t
+                spectrum = np.abs(fft.fft(signal))
+                spectrum = spectrum[:len(spectrum // 2)]
+                freq = fft.fftfreq(len(spectrum), t[1] - t[0])
+                freq = freq[:len(spectrum // 2)]
+                print(np.max(spectrum))
+                logger.log_info(f"{spectrum}")
+                logger.log_info(f"{freq}")
+                logger.log_info(f"{len(freq) == len(spectrum)}")
+                #freq = freq[:len(freq // 2)]
+                dpg.add_plot_legend()
+                axX = dpg.add_plot_axis(dpg.mvXAxis, label="f [Hz]")
+                axY = dpg.add_plot_axis(dpg.mvYAxis, label="Y")
+                dpg.add_line_series(freq, spectrum, label="Spectrum of encoded signal", parent=dpg.last_item())
+                dpg.fit_axis_data(axX)
+                dpg.fit_axis_data(axY)
+        pass
+    config = {**state.modulation_config, "scp_mode" : state.osci_config["scp_mode"]}
+    state.measurment = Measurment(state.scp, state.gen, [signal], config)
+    result = state.measurment.run()
     method.decode(result)
 
+    logger.log(f"modulation_config: {state.modulation_config}")
+    logger.log(f"method config: {config}")
+    logger.log(f"signal: {signal}")
+    logger.log(f"method internal bits: {method.bits}")
+    logger.log(f"result bits: {result}")
 
-if __name__ =="__main__":
-    cli()
+def hide_header(id, data):
+    if data == "OOK":
+        dpg.show_item(header_ook)
+        dpg.hide_item(header_fdm)
+    elif data == "FDM":
+        dpg.show_item(header_fdm)
+        dpg.hide_item(header_ook)
+    else:
+        pass
+def log_checkbox_callback(id, data):
+    if data == True:
+        dpg.show_item(logger.window_id)
+    else:
+        dpg.hide_item(logger.window_id)
 
+
+with dpg.window(label="Main Window") as main_window:
+    with dpg.menu_bar():
+        with dpg.menu(label="Log"):
+            dpg.add_checkbox(label="Show logger", default_value=False, id=log_checkbox_id, callback=log_checkbox_callback)
+
+    with dpg.collapsing_header(label="Osci Parameter", default_open=True):
+
+        #dpg.add_input_text(label="example", scientific=True, default_value=20e3, callback=lambda id, data: print(type(data)))
+        plot_flag_id                    = dpg.add_checkbox(label="Plot", default_value=True, callback=store_data)
+        dpg.add_text(default_value = "Scp measurement mode:")
+        scp_mode_id                = dpg.add_radio_button(["STREAM", "BLOCK"], indent=indent, label="scp-mode", default_value="STREAM", horizontal=True, callback=store_data)
+        scp_fs_id                  = dpg.add_input_float(label="[Hz] scp-fs", default_value=20e+03, min_value=0, max_value=1e9, user_data="scp-fs",callback=store_data)
+        scp_record_length_id       = dpg.add_input_int(label="scp-record-length", default_value=10000, min_value=0, max_value=40000, callback=store_data)
+
+        dpg.add_text(default_value="Generator signal type:")
+        gen_signal_type_id         = dpg.add_radio_button(["ARBITRARY"],indent=indent, label="gen-signal-type", default_value="ARBITRARY", horizontal=True, callback=store_data)
+        dpg.add_text(default_value="Generator frequency mode:")
+        gen_freq_mode_id           = dpg.add_radio_button(["SAMPLEFREQUENCY"], indent=indent, label="gen-frequency-mode", default_value="SAMPLEFREQUENCY", horizontal=True, user_data="gen-freq-mode",callback=store_data)
+        gen_fs_id                  = dpg.add_input_float(label="[Hz] gen-fs", default_value=20e+03, min_value=0, max_value=1e9, callback=store_data)
+        gen_amp_id                 = dpg.add_input_float(label="[V] gen-amp", default_value=4.0, min_value=0, max_value=8, callback=store_data)
+        gen_offset_id              = dpg.add_input_float(label="[V] gen-offset", default_value=0.0, min_value=0, max_value=1, callback=store_data)
+        gen_output_on_id           = dpg.add_checkbox(label="Outpout on", default_value=True, callback=store_data)
+        dpg.add_button(label="Save paramters", callback=save_osci_paramaters)
+
+        var_name_id_map.update({ "plot_flag":         plot_flag_id,
+                         "scp_mode":          scp_mode_id,
+                         "scp_fs":            scp_fs_id,
+                         "scp_record_length": scp_record_length_id,
+                         "gen_signal_type":   gen_signal_type_id,
+                         "gen_freq_mode":     gen_freq_mode_id,
+                         "gen_fs":            gen_fs_id,
+                         "gen_amp":           gen_amp_id,
+                         "gen_offset":        gen_offset_id,
+                         "gen_output_on":     gen_output_on_id })
+        for k,v in var_name_id_map.items():
+            storage[v] = dpg.get_value(v)
+    with dpg.collapsing_header(label="Modulation Method", default_open=True, id= header_modulation_method, show=False):
+        selection_id = dpg.add_radio_button(["OOK", "FDM"], horizontal=True, label="modulation-radio", default_value="OOK", callback=hide_header)
+        with dpg.collapsing_header(indent=indent, label="OOK", id=header_ook, show=True, default_open=True):
+            dpg.add_text("OOK")
+
+            ts_ook_id                  = dpg.add_input_float(label="[s] Ts symbol duration##ook", default_value=30e-03, min_value=0, max_value=1.0, callback=store_data_ook)
+            fs_ook_id                  = dpg.add_input_float(label="[Hz] fs sampling rate##ook", default_value=44e+03, min_value=0, max_value=1e+09, callback=store_data_ook)
+            fc_ook_id                  = dpg.add_input_float(label="[Hz] fc carrier frequency##ook", default_value=1.8e+03, min_value=0, max_value=1e+09, callback=store_data_ook)
+            nbits_ook_id                  = dpg.add_input_int(label="Nbits number of bits##ook", default_value=10, min_value=1, max_value=999, callback=store_data_ook)
+            generate_ook_id                  = dpg.add_checkbox(label="wheter to generate bits##ook", default_value=True, callback=store_data_ook)
+            bits_ook_id                  = dpg.add_input_text(label="bits to encode##ook", default_value="", decimal=True,callback=validate_bit_string_ook)
+            dpg.add_button(label="Set OOK parameters", callback=save_ook_parameter)
+
+            var_name_id_map_ook.update({
+                    "ts" : ts_ook_id,
+                    "fs" : fs_ook_id,
+                    "fc" : fc_ook_id,
+                    "nbits" : nbits_ook_id,
+                    "generate" : generate_ook_id,
+                    "bits" : bits_ook_id
+                    })
+            for k,v in var_name_id_map_ook.items():
+                storage_ook[v] = dpg.get_value(v)
+        with dpg.collapsing_header(indent=indent, label="FDM", id=header_fdm, show=False, default_open=True):
+            dpg.add_text("FDM")
+
+            ts_fdm_id                  = dpg.add_input_float(label="[s] Ts symbol duration##fdm", default_value=30e-03, min_value=0, max_value=1.0, callback=store_data_fdm)
+            fs_fdm_id                  = dpg.add_input_float(label="[Hz] fs sampling rate##fdm", default_value=44e+03, min_value=0, max_value=1e+09, callback=store_data_fdm)
+            fc_fdm_id                  = dpg.add_input_float(label="[Hz] fc carrier frequency##fdm", default_value=1.8e+03, min_value=0, max_value=1e+09, callback=store_data_fdm)
+            df_fdm_id                  = dpg.add_input_float(label="[Hz] df frequency spacing##fdm", default_value=1e+02, min_value=0, max_value=1e+09, callback=store_data_fdm)
+            nbits_fdm_id                  = dpg.add_input_int(label="Nbits number of bits##fdm", default_value=10, min_value=1, max_value=999, callback=store_data_fdm)
+            generate_fdm_id                  = dpg.add_checkbox(label="wheter to generate bits##fdm", default_value=True, callback=store_data_fdm)
+            bits_fdm_id                  = dpg.add_input_text(label="bits to encode##fdm", default_value="", decimal=True,callback=validate_bit_string_fdm)
+            dpg.add_button(label="Set FDM parameters", callback=save_fdm_parameter)
+
+            var_name_id_map_fdm.update({
+                    "ts" : ts_fdm_id,
+                    "fs" : fs_fdm_id,
+                    "fc" : fc_fdm_id,
+                    "df" : df_fdm_id,
+                    "nbits" : nbits_fdm_id,
+                    "generate" : generate_fdm_id,
+                    "bits" : bits_fdm_id
+                    })
+            for k,v in var_name_id_map_fdm.items():
+                storage_fdm[v] = dpg.get_value(v)
+            print({ k: storage_fdm[v] for k,v in var_name_id_map_fdm.items()})
+
+
+dpg.set_global_font_scale(2)
+dpg.set_primary_window(main_window, True)
+logger.log(f"{len(storage)} {storage}")
+logger.log(f"{len(var_name_id_map)} {var_name_id_map}")
+dpg.start_dearpygui()

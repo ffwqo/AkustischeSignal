@@ -129,19 +129,31 @@ class FDM:
 
 class FDMSimple:
 
-    def __init__(self):
-        self.Ts = 33e-03
-        self.Nbits = 10
-        self.fs = 44000
-        self.fc = 1800
-        self.df = 100
+    def __init__(self, Ts=30e-03, fs=44000, fc=1800, df = 100, Nbits=10, generate=True):
+        """
+        Ts: symbol duration
+        fs: sampling rate
+        fc: carrier freq
+        df: offset freq
+        Nbits: number of bits per encode pass
+        generate: whether to genrate a bit array for use in encode, decode otherwise provide one in encode
+        """
+
+        self.Ts = Ts
+        self.Nbits = Nbits
+        self.fs = fs
+        self.fc = fc
+        self.df = df
         self.baud = 1/self.Ts
         self.lower = self.fc - self.Nbits // 2 * self.df
         self.upper = self.fc + self.Nbits // 2 * self.df
         self.Ns = int( self.fs / self.baud ) #number of samples points per symbol
         self.N = self.Nbits * self.Ns
-        self.bits = (np.random.rand(self.Nbits, 1) > 0.5).astype("int")
         self.t = np.r_[0.0 : self.N] / self.fs
+        self.generate = generate
+
+        if generate:
+            self.bits = (np.random.rand(self.Nbits, 1) > 0.5).astype("int")
 
     def encode(self, bits=None):
         temp = None
