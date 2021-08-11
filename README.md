@@ -26,6 +26,7 @@ for gui
 cd python_terminal_mode
 python3 main_gui.py
 ```
+set osci parameter > check OOK/FDM > set OOK/FDM parameter = executes !
 
 for terminal 
 ```
