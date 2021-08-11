@@ -1,4 +1,4 @@
-#TODO plot flag?
+#TODO replace matplotlib with dearpygui.plot
 import matplotlib.pyplot as plt
 import click
 import sys
@@ -31,7 +31,7 @@ class ValidationError(Exception):
     pass
 class Measurment():
     """
-        to use firs define your ModulationMethodClass()
+        to use first define your ModulationMethodClass()
         then call encode and save the signal
         signal = encode() or signal = encode(bits)
         finally wrap signal around [signal] and init Measurment(scp, gen, chunks)
@@ -236,15 +236,13 @@ class OsciDevice():
 def validate_bit_string(kwargs):
     bits = None
     if kwargs["bits"] == "":
-        bits = np.array(None)
+        bits = None
     else:
         bits = list(kwargs["bits"])
         if set(bits) != {"1", "0"} and not kwargs["generate"]:
             print(' only "1" or "0" are valid characters for bits ')
             raise ValidationError
-            bits = np.array(None)
-        else:
-            bits = np.array([int(b) for b in bits])
+        bits = np.array(bits)
     return bits
 
 
@@ -272,7 +270,6 @@ def cli(ctx, plot, **kwargs):
     ctx.obj.osci_config = kwargs
     ctx.obj.osci_device = OsciDevice(kwargs)
     ctx.obj.scp, ctx.obj.gen = ctx.obj.osci_device.setup()
-    #click.echo(kwargs)
     ctx.obj.plot_flag = plot
 
 

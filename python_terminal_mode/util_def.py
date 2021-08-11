@@ -1,16 +1,14 @@
-#TODO plot flag?
-import matplotlib.pyplot as plt
-import click
 import sys
-import os
 import time
+import os
 import numpy as np
 from array import array
 import libtiepie
 from printinfo import *
-
-from ook import OOKSimpleExp
-from fdm import FDMSimple as FDM
+class MeasurmentFailure(Exception):
+    pass
+class ValidationError(Exception):
+    pass
 
 class State():
     def __init__(self):
@@ -22,13 +20,6 @@ class State():
         self.modulation_config = None
         self.measurement = None
         self.modulation_method = None
-
-pass_state = click.make_pass_decorator(State)
-
-class MeasurmentFailure(Exception):
-    pass
-class ValidationError(Exception):
-    pass
 class Measurment():
     """
         to use firs define your ModulationMethodClass()
@@ -69,11 +60,11 @@ class Measurment():
                     print_device_info(self.scp)
                     print_device_info(self.gen)
             except Exception as e:
-                click.echo("Exception: " + str(e))
-                click.echo(sys.exc_info()[0])
+                print("Exception: " + str(e))
+                print(sys.exc_info()[0])
                 return
                 #sys.exit(1)
-        click.echo("Successfully set osci parameters")
+        print("Successfully set osci parameters")
 
     def run(self):
         scp = self.scp
@@ -90,7 +81,7 @@ class Measurment():
                 while not (scp.is_data_ready or scp.is_data_overflow):
                     time.sleep(0.01)
                 if scp.is_data_overflow:
-                    click.echo("Data overflow")
+                    print("Data overflow")
                 d = np.array(scp.get_data())
                 """
                 scp returns data like 
@@ -124,9 +115,9 @@ class Measurment():
                 header += f"Ch{i+1}\t"
             np.savetxt(filename, np.array(data).transpose(), header=header)
         except:
-            click.echo("Cannot start measurement")
+            print("Cannot start measurement")
             raise MeasurmentFailure
-        click.echo("Finished measurement")
+        print("Finished measurement")
         return result
 
 class OsciDevice():
@@ -175,7 +166,7 @@ class OsciDevice():
             self.scp_dict[libtiepie.MM_BLOCK] = scp
             self.gen_dict[libtiepie.MM_BLOCK] = gen
         else:
-            click.echo("SCP/GEN NOT FOUND FOR MM_BLOCK")
+            print("SCP/GEN NOT FOUND FOR MM_BLOCK")
         scp = None
         gen = None
         #then scp+gen for MM_STREAM
@@ -192,7 +183,7 @@ class OsciDevice():
             self.scp_dict[libtiepie.MM_STREAM] = scp
             self.gen_dict[libtiepie.MM_STREAM] = gen
         else:
-            click.echo("SCP/GEN NOT FOUND FOR MM_STREAM")
+            print("SCP/GEN NOT FOUND FOR MM_STREAM")
 
         if self.scp_mode in self.scp_dict:
             self.scp = self.scp_dict[self.scp_mode]
@@ -223,121 +214,11 @@ class OsciDevice():
                     print_device_info(scp)
                     print_device_info(gen)
             except Exception as e:
-                click.echo("Exception: " + str(e))
-                click.echo(sys.exc_info()[0])
+                print("Exception: " + str(e))
+                print(sys.exc_info()[0])
                 return
                 #sys.exit(1)
         else:
-            click.echo("No device avaible for measurement in " + self.scp_mode_map[self.scp_mode] + " mode")
-        click.echo("Successfully set")
+            print("No device avaible for measurement in " + self.scp_mode_map[self.scp_mode] + " mode")
+        print("Successfully set")
         return self.scp, self.gen
-
-
-def validate_bit_string(kwargs):
-    bits = None
-    if kwargs["bits"] == "":
-        bits = np.array(None)
-    else:
-        bits = list(kwargs["bits"])
-        if set(bits) != {"1", "0"} and not kwargs["generate"]:
-            print(' only "1" or "0" are valid characters for bits ')
-            raise ValidationError
-            bits = np.array(None)
-        else:
-            bits = np.array([int(b) for b in bits])
-    return bits
-
-
-
-CONTEXT_SETTINGS = dict(
-    show_default=True
-)
-
-#=============OSCI
-@click.group(context_settings=CONTEXT_SETTINGS, invoke_without_command=True)
-@click.option("--plot/--no-plot", default=True)
-@click.option("--stream", "scp_mode", flag_value="STREAM", help="scp STREAM mode")
-@click.option("--block", "scp_mode", flag_value="BLOCK", help="scp BLOCK mode", default=True)
-@click.option("--scp-fs", type=click.FLOAT, default=20e3, help="scp sampling rate fs")
-@click.option("--scp-record-length", type=click.INT, default=10000, help="scp record_length")
-@click.option("--gen-signal-type-ARBITRARY", "gen_signal_type", flag_value="ARBITRARY", help="generator signal type only ARBITRARY implemented [default]", default=True)
-@click.option("--gen-frequency-mode", "gen_freq_mode", flag_value="SAMPLEFREQUENCY", help="generator frequency mode only SAMPLEFREQUENCY implemented [default]", default=True)
-@click.option("--gen-fs", type=click.FLOAT, default=20e3, help="generator sampling rate")
-@click.option("--gen-amp", type=click.FLOAT, default=4.0, help="generator Amplitude")
-@click.option("--gen-offset", type=click.FLOAT, default=0.0, help="generator offet")
-@click.option("--gen-output-on", type=click.BOOL, default=True, help="generator Offset on")
-@click.pass_context
-def cli(ctx, plot, **kwargs):
-    ctx.obj = State()
-    ctx.obj.osci_config = kwargs
-    ctx.obj.osci_device = OsciDevice(kwargs)
-    ctx.obj.scp, ctx.obj.gen = ctx.obj.osci_device.setup()
-    #click.echo(kwargs)
-    ctx.obj.plot_flag = plot
-
-
-#=============OOK
-@cli.command()
-@click.option("--modulation-method", "modulation_method", flag_value="OOK", help="modulation method", default=True)
-@click.option("--ts", type=click.FLOAT, default=30e-03, help="symbol duration Ts")
-@click.option("--fs", type=click.FLOAT, default=44000, help="sampling rate fs")
-@click.option("--fc", type=click.FLOAT, default=1800, help="carrier frequency fc")
-@click.option("--nbits", type=click.INT, default=10, help="number of bits to encode")
-@click.option("--generate", type=click.BOOL, default=True, help="wether to randomly generate bits")
-@click.option("--bits", type=click.STRING, default="", help="bit sequence")
-@pass_state
-def ook(state, **kwargs):
-    state.modulation_config = kwargs 
-    method = OOKSimpleExp( Ts=kwargs["ts"], 
-            fs=kwargs["fs"],
-            fc=kwargs["fc"],
-            Nbits=kwargs["nbits"],
-            generate=kwargs["generate"])
-
-    bits = validate_bit_string(kwargs)
-    signal = method.encode(bits)
-    if state.plot_flag == True :
-        method.plot(signal, bits)
-
-    config = {**kwargs, "scp_mode" : state.osci_config["scp_mode"]}
-    state.measurement = Measurment(state.scp, state.gen, [signal], config)
-    result = state.measurement.run()
-    method.decode(result)
-
-
-
-#=============FDM
-@cli.command()
-@click.option("--modulation-method", "modulation_method", flag_value="FDM", help="modulation method", default=True)
-@click.option("--ts", type=click.FLOAT, default=30e-03, help="symbol duration Ts")
-@click.option("--fs", type=click.FLOAT, default=44000, help="sampling rate fs")
-@click.option("--fc", type=click.FLOAT, default=1800, help="carrier frequency fc")
-@click.option("--df", type=click.FLOAT, default=100, help="frequency spacing used")
-@click.option("--nbits", type=click.INT, default=10, help="number of bits to encode")
-@click.option("--generate", type=click.BOOL, default=True, help="wether to randomly generate bits")
-@click.option("--bits", type=click.STRING, default="", help="bit sequence")
-@pass_state
-def fdm(state, **kwargs):
-   #TODO check fdm.encdode fdm.decode implement with signal, bits 
-    state.modulation_config = kwargs 
-    method = FDM( Ts=kwargs["ts"], 
-            fs=kwargs["fs"],
-            fc=kwargs["fc"],
-            df=kwargs["df"],
-            Nbits=kwargs["nbits"],
-            generate=kwargs["generate"])
-
-    bits = validate_bit_string(kwargs)
-    signal = method.encode(bits)
-    if state.plot_flag == True :
-        method.plot(signal, bits)
-
-    config = {**kwargs, "scp_mode" : state.osci_config["scp_mode"]}
-    state.measurement = Measurment(state.scp, state.gen, [signal], config)
-    result = state.measurement.run()
-    method.decode(result)
-
-
-if __name__ =="__main__":
-    cli()
-
