@@ -2,5 +2,6 @@ numpy
 matplotlib
 scipy
 python-libtiepie
-pyqt5
+dearpygui
+#pyqt5
 click

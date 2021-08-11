@@ -47,6 +47,35 @@ class Measurment():
         self.chunks = chunks
         self.config_dict = config_dict
         print("Starting measurment!")
+    def set_parameters_osci(self, osci_device, debug=False):
+        assert( isinstance(osci_device, OsciDevice))
+        if self.scp and self.gen:
+            try:
+                self.scp.measure_mode = osci_device.scp_mode          
+                self.scp.sample_frequency = osci_device.scp_fs            
+                self.scp.record_length = osci_device.scp_record_length 
+                for ch in self.scp.channels:
+                    ch.enabled = True
+                    ch.range = 8
+                    ch.coupling = libtiepie.CK_DCV
+
+                self.gen.signal_type    = osci_device.gen_signal_type
+                self.gen.frequency_mode = osci_device.gen_freq_mode
+                self.gen.frequency      = osci_device.gen_fs
+                self.gen.amplitude      = osci_device.gen_amp
+                self.gen.offset         = osci_device.gen_offset
+                self.gen.output_on      = osci_device.gen_output_on
+                if debug:
+                    print_device_info(self.scp)
+                    print_device_info(self.gen)
+            except Exception as e:
+                click.echo("Exception: " + str(e))
+                click.echo(sys.exc_info()[0])
+                return
+                #sys.exit(1)
+        else:
+            click.echo("No device avaible for measurement in " + osci_device.scp_mode_map[osci_device.scp_mode] + " mode")
+
     def run(self):
         scp = self.scp
         gen = self.gen
@@ -54,6 +83,7 @@ class Measurment():
         mode = self.config_dict["scp_mode"] #string
         result = []
         try:
+            scp.start()
             for i in range(len(chunks)):
                 gen.set_data(chunks[i])
                 gen.start()
@@ -214,8 +244,8 @@ CONTEXT_SETTINGS = dict(
 #=============OSCI
 @click.group(context_settings=CONTEXT_SETTINGS, invoke_without_command=True)
 @click.option("--plot/--no-plot", default=True)
-@click.option("--stream", "scp_mode", flag_value="STREAM", help="scp STREAM mode", default=True)
-@click.option("--block", "scp_mode", flag_value="BLOCK", help="scp BLOCK mode")
+@click.option("--stream", "scp_mode", flag_value="STREAM", help="scp STREAM mode")
+@click.option("--block", "scp_mode", flag_value="BLOCK", help="scp BLOCK mode", default=True)
 @click.option("--scp-fs", type=click.FLOAT, default=20e3, help="scp sampling rate fs")
 @click.option("--scp-record-length", type=click.INT, default=10000, help="scp record_length")
 @click.option("--gen-signal-type-ARBITRARY", "gen_signal_type", flag_value="ARBITRARY", help="generator signal type only ARBITRARY implemented [default]", default=True)
