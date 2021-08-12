@@ -216,53 +216,54 @@ with dpg.window(label="Main Window") as main_window:
                          "gen_output_on":     gen_output_on_id })
         for k,v in var_name_id_map.items():
             storage[v] = dpg.get_value(v)
-    with dpg.collapsing_header(label="Modulation Method", default_open=True, id= header_modulation_method, show=False):
-        selection_id = dpg.add_radio_button(["OOK", "FDM"], horizontal=True, label="modulation-radio", default_value="OOK", callback=hide_header)
-        with dpg.collapsing_header(indent=indent, label="OOK", id=header_ook, show=True, default_open=True):
-            dpg.add_text("OOK")
+    #with dpg.collapsing_header(label="Modulation Method", default_open=True, id= header_modulation_method, show=False):
+with dpg.window(label="Modulation Method", id= header_modulation_method, show=False):
+    selection_id = dpg.add_radio_button(["OOK", "FDM"], horizontal=True, label="modulation-radio", default_value="OOK", callback=hide_header)
+    with dpg.collapsing_header(indent=indent, label="OOK", id=header_ook, show=True, default_open=True):
+        dpg.add_text("OOK")
 
-            ts_ook_id                  = dpg.add_input_float(label="[s] Ts symbol duration##ook", default_value=30e-03, min_value=0, max_value=1.0, callback=store_data_ook)
-            fs_ook_id                  = dpg.add_input_float(label="[Hz] fs sampling rate##ook", default_value=44e+03, min_value=0, max_value=1e+09, callback=store_data_ook)
-            fc_ook_id                  = dpg.add_input_float(label="[Hz] fc carrier frequency##ook", default_value=1.8e+03, min_value=0, max_value=1e+09, callback=store_data_ook)
-            nbits_ook_id                  = dpg.add_input_int(label="Nbits number of bits##ook", default_value=10, min_value=1, max_value=999, callback=store_data_ook)
-            generate_ook_id                  = dpg.add_checkbox(label="wheter to generate bits##ook", default_value=True, callback=store_data_ook)
-            bits_ook_id                  = dpg.add_input_text(label="bits to encode##ook", default_value="", decimal=True,callback=validate_bit_string_ook)
-            dpg.add_button(label="Set OOK parameters", callback=save_ook_parameter)
+        ts_ook_id                  = dpg.add_input_float(label="[s] Ts symbol duration##ook", default_value=30e-03, min_value=0, max_value=1.0, callback=store_data_ook)
+        fs_ook_id                  = dpg.add_input_float(label="[Hz] fs sampling rate##ook", default_value=44e+03, min_value=0, max_value=1e+09, callback=store_data_ook)
+        fc_ook_id                  = dpg.add_input_float(label="[Hz] fc carrier frequency##ook", default_value=1.8e+03, min_value=0, max_value=1e+09, callback=store_data_ook)
+        nbits_ook_id                  = dpg.add_input_int(label="Nbits number of bits##ook", default_value=10, min_value=1, max_value=999, callback=store_data_ook)
+        generate_ook_id                  = dpg.add_checkbox(label="wheter to generate bits##ook", default_value=True, callback=store_data_ook)
+        bits_ook_id                  = dpg.add_input_text(label="bits to encode##ook", default_value="", decimal=True,callback=validate_bit_string_ook)
+        dpg.add_button(label="Set OOK parameters", callback=save_ook_parameter)
 
-            var_name_id_map_ook.update({
-                    "ts" : ts_ook_id,
-                    "fs" : fs_ook_id,
-                    "fc" : fc_ook_id,
-                    "nbits" : nbits_ook_id,
-                    "generate" : generate_ook_id,
-                    "bits" : bits_ook_id
-                    })
-            for k,v in var_name_id_map_ook.items():
-                storage_ook[v] = dpg.get_value(v)
-        with dpg.collapsing_header(indent=indent, label="FDM", id=header_fdm, show=False, default_open=True):
-            dpg.add_text("FDM")
+        var_name_id_map_ook.update({
+                "ts" : ts_ook_id,
+                "fs" : fs_ook_id,
+                "fc" : fc_ook_id,
+                "nbits" : nbits_ook_id,
+                "generate" : generate_ook_id,
+                "bits" : bits_ook_id
+                })
+        for k,v in var_name_id_map_ook.items():
+            storage_ook[v] = dpg.get_value(v)
+    with dpg.collapsing_header(indent=indent, label="FDM", id=header_fdm, show=False, default_open=True):
+        dpg.add_text("FDM")
 
-            ts_fdm_id                  = dpg.add_input_float(label="[s] Ts symbol duration##fdm", default_value=30e-03, min_value=0, max_value=1.0, callback=store_data_fdm)
-            fs_fdm_id                  = dpg.add_input_float(label="[Hz] fs sampling rate##fdm", default_value=44e+03, min_value=0, max_value=1e+09, callback=store_data_fdm)
-            fc_fdm_id                  = dpg.add_input_float(label="[Hz] fc carrier frequency##fdm", default_value=1.8e+03, min_value=0, max_value=1e+09, callback=store_data_fdm)
-            df_fdm_id                  = dpg.add_input_float(label="[Hz] df frequency spacing##fdm", default_value=1e+02, min_value=0, max_value=1e+09, callback=store_data_fdm)
-            nbits_fdm_id                  = dpg.add_input_int(label="Nbits number of bits##fdm", default_value=10, min_value=1, max_value=999, callback=store_data_fdm)
-            generate_fdm_id                  = dpg.add_checkbox(label="wheter to generate bits##fdm", default_value=True, callback=store_data_fdm)
-            bits_fdm_id                  = dpg.add_input_text(label="bits to encode##fdm", default_value="", decimal=True,callback=validate_bit_string_fdm)
-            dpg.add_button(label="Set FDM parameters", callback=save_fdm_parameter)
+        ts_fdm_id                  = dpg.add_input_float(label="[s] Ts symbol duration##fdm", default_value=30e-03, min_value=0, max_value=1.0, callback=store_data_fdm)
+        fs_fdm_id                  = dpg.add_input_float(label="[Hz] fs sampling rate##fdm", default_value=44e+03, min_value=0, max_value=1e+09, callback=store_data_fdm)
+        fc_fdm_id                  = dpg.add_input_float(label="[Hz] fc carrier frequency##fdm", default_value=1.8e+03, min_value=0, max_value=1e+09, callback=store_data_fdm)
+        df_fdm_id                  = dpg.add_input_float(label="[Hz] df frequency spacing##fdm", default_value=1e+02, min_value=0, max_value=1e+09, callback=store_data_fdm)
+        nbits_fdm_id                  = dpg.add_input_int(label="Nbits number of bits##fdm", default_value=10, min_value=1, max_value=999, callback=store_data_fdm)
+        generate_fdm_id                  = dpg.add_checkbox(label="wheter to generate bits##fdm", default_value=True, callback=store_data_fdm)
+        bits_fdm_id                  = dpg.add_input_text(label="bits to encode##fdm", default_value="", decimal=True,callback=validate_bit_string_fdm)
+        dpg.add_button(label="Set FDM parameters", callback=save_fdm_parameter)
 
-            var_name_id_map_fdm.update({
-                    "ts" : ts_fdm_id,
-                    "fs" : fs_fdm_id,
-                    "fc" : fc_fdm_id,
-                    "df" : df_fdm_id,
-                    "nbits" : nbits_fdm_id,
-                    "generate" : generate_fdm_id,
-                    "bits" : bits_fdm_id
-                    })
-            for k,v in var_name_id_map_fdm.items():
-                storage_fdm[v] = dpg.get_value(v)
-            print({ k: storage_fdm[v] for k,v in var_name_id_map_fdm.items()})
+        var_name_id_map_fdm.update({
+                "ts" : ts_fdm_id,
+                "fs" : fs_fdm_id,
+                "fc" : fc_fdm_id,
+                "df" : df_fdm_id,
+                "nbits" : nbits_fdm_id,
+                "generate" : generate_fdm_id,
+                "bits" : bits_fdm_id
+                })
+        for k,v in var_name_id_map_fdm.items():
+            storage_fdm[v] = dpg.get_value(v)
+        print({ k: storage_fdm[v] for k,v in var_name_id_map_fdm.items()})
 
 
 dpg.set_global_font_scale(2)

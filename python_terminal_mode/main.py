@@ -44,7 +44,7 @@ class Measurment():
         assert(len(chunks) ==1 and config_dict["mode"] == "BLOCK")
         self.scp = scp
         self.gen = gen
-        self.chunks = chunks
+        self.chunks = [array("f", chunk) for chunk in chunks]
         self.config_dict = config_dict
         print("Starting measurment!")
     def set_parameters_osci(self, osci_device, debug=False):
