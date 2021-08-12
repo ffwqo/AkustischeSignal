@@ -1,14 +1,10 @@
 
-<video src="doc/example_gui.mp4"></video>
-py/ or python_/ contains the python impl
+src/ the program 
 
-python_terminal_mode/ contains the terminal app see below on how to run
+- main.py terminal mode
+- main_gui.py dearpygui
 
-matlab/ contains the matlab impl TODO...
-
-misc/ contains test functions and WIP
-
-data/ contains example data
+misc/ misc old files 
 
 # Installation
 
