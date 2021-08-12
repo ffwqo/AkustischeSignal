@@ -46,12 +46,16 @@ class FDM:
             self.bits = (np.random.rand(self.Nbits, 1) > 0.5).astype("int")
 
     def encode(self, bits=None):
-        if np.all(bits) != None and not self.generate:
+        temp = None
+        if bits is not None:
             assert(len(bits) == self.Nbits)
+            temp = self.bits
             self.bits = bits
         self.signal = np.zeros(self.N)
         for idx, bit in enumerate(self.bits):
             self.signal += bit * np.sin(2 * np.pi * self.t * (self.lower + idx * self.df))
+        if bits is not None and temp is not None:
+            self.bits = temp
         return self.signal
 
     def decode(self, signal=None, testing=False):
@@ -62,7 +66,7 @@ class FDM:
         returns: the decoded bits
         """
         temp = None
-        if np.all(signal) != None:
+        if signal is not None:
             print("using user provided signal")
             assert( signal.shape == self.signal.shape)
             temp = self.signal.copy()
@@ -91,7 +95,7 @@ class FDM:
                 result.append(0)
         if testing:
             assert(np.all(result == self.bits.flatten()))
-        if np.all(signal) != None and np.all(temp) != None:
+        if signal is not None and temp is not None:
             self.signal = temp
         return result
 
@@ -157,7 +161,7 @@ class FDMSimple:
 
     def encode(self, bits=None):
         temp = None
-        if np.all(bits != None):
+        if bits is not None:
             temp = self.bits
             assert(len(bits) == self.Nbits)
             self.bits = bits
@@ -165,12 +169,12 @@ class FDMSimple:
         for idx, bit in enumerate(self.bits):
             self.signal += bit * np.sin(2 * np.pi * self.t * (self.lower + idx * self.df))
 
-        if np.all(bits != None) and np.all(temp):
+        if bits is not None and temp is not None:
             self.bits = temp
         return self.signal
 
     def _testing_encode(self, bits):
-        if np.all(bits) != None:
+        if bits is not None:
             assert(len(bits) == self.Nbits)
             self.bits = bits
         self.signal = np.zeros(self.N)
@@ -181,7 +185,7 @@ class FDMSimple:
     def decode(self, testing=False, signal=None, bits=None):
         temp1 = None
         temp2 = None
-        if np.all(bits) != None and np.all(signal !=None):
+        if bits is not None and signal is not None:
             assert(len(bits) == len(self.bits))
             assert(len(signal) == len(self.signal))
             temp1, temp2 = self.signal, self.bits
@@ -215,14 +219,14 @@ class FDMSimple:
         #print("in == out", np.all(result == self.bits.flatten()))
         if testing :
             assert(np.all(result == self.bits.flatten()))
-        if np.all(bits) != None and np.all(signal !=None) and np.all(temp1 != None) and np.all(temp2 != None):
+        if bits is not None and signal is not None and temp1 is not None and temp2 is not None:
             self.signal, self.bits = temp1, temp2
         return result
 
     def plot(self, signal=None, bits=None):
         temp1 = None
         temp2 = None
-        if np.all(bits) != None and np.all(signal !=None):
+        if bits is not None and signal is not None:
             assert(len(bits) == len(self.bits))
             assert(len(signal) == len(self.signal))
             temp1, temp2 = self.signal, self.bits
@@ -240,7 +244,7 @@ class FDMSimple:
             plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
         plt.xlim([self.lower - self.df * 5, self.upper + self.df * 5])
         plt.show()
-        if np.all(bits) != None and np.all(signal !=None) and np.all(temp1 != None) and np.all(temp2 != None):
+        if bits is not None and signal is not None and temp1 is not None and temp2 is not None:
             self.signal, self.bits = temp1, temp2
 
 def test_class(obj, Nbits=10):

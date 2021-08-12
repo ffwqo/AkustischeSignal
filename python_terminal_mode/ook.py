@@ -46,20 +46,20 @@ class OOK:
             self.bits = (np.random.rand(self.Nbits, 1) > 0.5).astype("int")
             self.M = np.tile(self.bits, (1, self.Ns ))
 
-    def encode(self, bits):
+    def encode(self, bits=None):
         """ modulation scheme 
         bits: bit array to encode does not overwrite the internal bit array i.e. you have to save signal/bits uses parameters of the class
         returns the signal/data
         """
 
         temp = None
-        if not self.generate:
+        if bits is not None:
             assert(len(bits) == self.Nbits)
             temp = self.M
             self.M = np.tile(bits, (1, self.Ns ))
         self.signal = np.zeros(self.N)
         self.signal = self.M.ravel() * np.sin(2 * np.pi * self.fc * self.t)
-        if np.all(temp) != None:
+        if temp is not None:
             self.M = temp
         return self.signal
 
@@ -78,7 +78,7 @@ class OOK:
         returns the transmitted bits
         """
         temp = None
-        if np.all(signal) != None:
+        if signal is not None:
             assert(signal.shape == self.signal.shape)
             temp = self.signal
             self.signal = signal
@@ -98,7 +98,7 @@ class OOK:
         print("in: ", self.bits.flatten())
         print("out: ", np.array(result))
         print("in == out", np.all(result == self.bits.flatten()), "hits:", self._count)
-        if np.all(signal) != None and np.all(temp) != None:
+        if temp is not None:
             self.signal = temp
         return result
 
@@ -146,7 +146,7 @@ class OOKSimpleExp(OOK):
         """
         temp2 = None
         temp3 = None
-        if np.all(bits) != None:
+        if bits is not None:
             temp2 = self.M
             temp3 = self.bits
             self.M = np.tile(bits, (1, self.Ns ))
@@ -156,8 +156,8 @@ class OOKSimpleExp(OOK):
         for i, b in enumerate(self.bits):
             temp += b * self._ampl(self.t, (i + 0.5) * self.Ts, self.Ts / 10)
         self.signal = self.M.ravel() * temp * np.sin(2 * np.pi * self.fc * self.t)
-
-        if np.all(bits != None) and np.all(temp2 != None) and np.all(temp3 != None):
+        
+        if temp2 is not None and temp3 is not None:
             self.M = temp2
             self.bits = temp3
         return self.signal
@@ -179,7 +179,7 @@ class OOKSimpleExp(OOK):
         returns: the decoded bit array
         """
         temp = None
-        if np.all(signal) != None:
+        if signal is not None:
             assert(signal.shape == self.signal.shape)
             temp = self.signal
             self.signal = signal
@@ -196,7 +196,7 @@ class OOKSimpleExp(OOK):
         if np.all( result == self.bits.flatten() ):
             self._count += 1
         print("in: ", self.bits.flatten(), "out: ", np.array(result), "in == out", np.all(result == self.bits.flatten()), "hits:", self._count)
-        if np.all(signal) != None and np.all(temp) != None:
+        if temp is not None:
             self.signal = temp
         return result
 
@@ -206,7 +206,7 @@ class OOKSimpleExp(OOK):
         """
         temp1 = None
         temp2 = None
-        if np.all(signal != None) and np.all(bits != None):
+        if signal is not None and bits is not None:
             assert(self.signal.shape == signal.shape and bits.shape == bits.shaoe)
             temp1, temp2 = self.signal, self.bits
             self.signal, self.bits = signal, bits
@@ -219,21 +219,21 @@ class OOKSimpleExp(OOK):
         plt.title("".join([str(b) for b in self.bits]))
         for idx, bit in enumerate(self.bits):
             plt.vlines(idx * self.Ts, -1.1, 1.1, "r")
-        if np.all(signal != None) and np.all(bits != None) and np.all(temp1 != None) and np.all(temp2 != None):
+        if temp1 is not None and temp2 is not None:
             self.signal, self.bits = temp1, temp2
         plt.show()
 
     def plot_spectrum(self, signal=None):
         temp = None
-        if np.all(signal != None):
+        if signal is not None:
             assert(self.signal.shape == signal.shape)
-            temp1= self.signal
+            temp = self.signal
             self.signal = signal
 
         f = np.r_[0: self.N/2.0] / self.N * self.fs
         s = fft.fft(self.signal)
         plt.plot(f, np.abs(s[:len(s) //2]))
-        if np.all(signal != None) and np.all(temp != None):
+        if temp is not None:
             self.signal = temp
         plt.show()
 
