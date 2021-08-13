@@ -29,6 +29,9 @@ class Measurment():
         scp, gen come from OsciDevice.setup()
     """
     def __init__(self, scp, gen, chunks, config_dict):
+        """
+        chunks: a list of arrays will be converted to array("f") so libtiepie can be used them
+        """
         assert(scp != None)
         assert(gen != None)
         assert(config_dict != None)
@@ -222,3 +225,8 @@ class OsciDevice():
             print("No device avaible for measurement in " + self.scp_mode_map[self.scp_mode] + " mode")
         print("Successfully set")
         return self.scp, self.gen
+
+
+#TODO reimplement OsciDevice::setup as OsciDeviceMatlab::setup calling the underlying matlab script from util.m
+#TODO reimplement Measurment::set_parameters_osci and Measurment::run for matlab possibly running a simply flag wether to use matlab mode or not..
+#TODO util.m implement setup. set_parameters_osci, run
