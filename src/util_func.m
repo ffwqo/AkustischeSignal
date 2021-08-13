@@ -1,4 +1,5 @@
 
+% For use with a main file import the script either in matlab or python supply the chunks sa a cell array of arrays i.e. Nx1 cell array of data chunk
 if verLessThan('matlab', '8')
     error('Matlab 8.0 (R2012b) or higher is required.');
 end
