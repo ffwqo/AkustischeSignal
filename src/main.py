@@ -296,6 +296,7 @@ def ook(state, **kwargs):
 
     bits = validate_bit_string(kwargs)
     bits = np.array([int(i) for i in (np.random.rand(kwargs["nbits"]) > 0.5)])
+    print("Input bit array: ", bits)
     signal = method.encode(bits)
     if state.plot_flag == True :
         method.plot(signal, bits)
@@ -329,6 +330,8 @@ def fdm(state, **kwargs):
             generate=kwargs["generate"])
 
     bits = validate_bit_string(kwargs)
+    bits = np.array([int(i) for i in (np.random.rand(kwargs["nbits"]) > 0.5)])
+    print("Input bit array: ", bits)
     signal = method.encode(bits)
     if state.plot_flag == True :
         method.plot(signal, bits)
