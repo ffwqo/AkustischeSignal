@@ -22,6 +22,7 @@ import libtiepie
 import numpy as np
 
 from ook import OOKSimpleExp
+from fdm import FDMSimple
 
 
 
@@ -32,6 +33,7 @@ gen_fs = 20e3
 gen_amp = 4
 gen_offset = 0
 
+#ook
 Ts=30e-03
 fs=44000
 fc=1800
@@ -40,6 +42,20 @@ ook_device = OOKSimpleExp(Ts, fs, fc, Nbits)
 bits = ook_device.generate()
 signal = ook_device.encode(bits)
 #ook_device.plot(signal, bits)
+
+
+#fdm
+#Ts=30e-03
+#fs=44000
+#fc=1800
+#df = 100
+#Nbits=10
+#fdm_device = FDMSimple(Ts, fs, fc, df, Nbits)
+#bits = fdm_device.generate()
+#signal = fdm_device.encode(bits)
+#fdm_device.plot(signal, bits)
+
+
 data = array("f", signal)
 
 
