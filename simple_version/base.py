@@ -146,7 +146,7 @@ if scp and gen:
     del gen
     signal_scp = result[:, 1]
     signal_gen = result[:, 0]
-    device.decode(signal, bits)
+    device.decode(signal_scp, bits)
     device.plot(signal, bits, title="Scp Signal")
     plt.show()
 
