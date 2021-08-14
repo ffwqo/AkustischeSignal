@@ -43,7 +43,7 @@ device = OOKSimpleExp(Ts, fs, fc, Nbits)
 device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
 bits = device.generate()
 signal = device.encode(bits)
-device.plot(signal, bits, show=True)
+device.plot(signal, bits, show=False)
 
 
 #fdm
@@ -147,7 +147,9 @@ if scp and gen:
     signal_scp = result[:, 1]
     signal_gen = result[:, 0]
     device.decode(signal_scp, bits)
-    device.plot(signal, bits, title="Scp Signal")
+    device.plot(signal_scp, bits, title="Scp Signal")
+    plt.show()
+    device.plot(signal_gen, bits, title="gen Signal")
     plt.show()
 
 
