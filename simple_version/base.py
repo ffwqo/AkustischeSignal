@@ -127,7 +127,8 @@ if scp and gen:
         for i in range(len(scp.channels)):
             header += "Ch{}\t".format(i+1) 
 
-        np.savetxt(filename, data.transpose(), header=header)
+        result = data.transpose()
+        np.savetxt(filename, result, header=header)
         print("Written file!", flush=True)
 
         scp.stop()
@@ -141,11 +142,15 @@ if scp and gen:
 
     del scp
     del gen
+    signal_scp = result[:, 1]
+    device.decode(signal, bits)
+    device.plot(signal, bits, title="Scp Signal")
+    plt.show()
+
 
 else:
     print("No device avaible for measurement")
     sys.exit(1)
 
-data = np.loadtxt(filename)
 print(data.shape)
 

@@ -18,6 +18,7 @@ import scipy.fft as fft
 import itertools
 
 class OOKSimpleExp():
+    _count = 0
 
     def __init__(self, Ts=30e-03, fs=44000, fc=1800, Nbits=10):
         """
@@ -92,7 +93,7 @@ class OOKSimpleExp():
         print("in: ", bits.flatten(), "out: ", np.array(result), "in == out", np.all(result == bits.flatten()), "hits:", self._count)
         return result
 
-    def plot(self, signal, bits):
+    def plot(self, signal, bits, title=""):
         """
         plots the encoded message uses signal and bits if provided
         """
@@ -102,10 +103,9 @@ class OOKSimpleExp():
         plt.plot(self.t, temp, "g--")
         plt.plot(self.t, signal)
         plt.xlabel("t [s]")
-        plt.title("bits input: "+ "".join([str(b) for b in bits.flatten()]))
+        plt.title(title+"\nbits input: "+ "".join([str(b) for b in bits.flatten()]))
         for idx, bit in enumerate(bits):
             plt.vlines(idx * self.Ts, -1.1, 1.1, "r")
-        plt.show()
 
     def plot_spectrum(self, signal):
         temp = None
@@ -113,7 +113,6 @@ class OOKSimpleExp():
         f = np.r_[0: self.N/2.0] / self.N * self.fs
         s = fft.fft(signal)
         plt.plot(f, np.abs(s[:len(s) //2]))
-        plt.show()
 
 
 def test_class(obj, Nbits=10):
@@ -133,6 +132,10 @@ def plot_class(obj):
     ex.plot()
 
 if __name__ == "__main__":
-    plot_class(OOKSimpleExp)
+    ook = OOKSimpleExp()
+    bits = ook.generate()
+    signal = ook.encode(bits)
+    result = ook.decode(signal, bits)
+    ook.plot(signal, bits)
     plt.show()
 

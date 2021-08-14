@@ -94,7 +94,7 @@ class FDMSimple:
             assert(np.all(result == bits.flatten()))
         return result
 
-    def plot(self, signal, bits):
+    def plot(self, signal, bits, title=""):
         s = np.abs(fft.fft(signal))
         idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
         idx = idx[:len(idx) // 2] #only the postive part
@@ -102,7 +102,7 @@ class FDMSimple:
         freq = freq[:len(s) // 2]
         s = s[:len(s) // 2]
         plt.plot(freq, s)
-        plt.title("Frequenzspektrum bits input: " + "".join([str(b) for b in bits.flatten()]))
+        plt.title(title + "\nFrequenzspektrum bits input: " + "".join([str(b) for b in bits.flatten()]))
         plt.xlabel("f [Hz]")
         for idx, bit in enumerate(bits):
             plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
