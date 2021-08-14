@@ -94,7 +94,7 @@ class FDMSimple:
             assert(np.all(result == bits.flatten()))
         return result
 
-    def plot(self, signal, bits, title=""):
+    def plot(self, signal, bits, show=False, title=""):
         s = np.abs(fft.fft(signal))
         idx , _ = find_peaks(s, height=np.max(s)/ 10.0)
         idx = idx[:len(idx) // 2] #only the postive part
@@ -107,7 +107,8 @@ class FDMSimple:
         for idx, bit in enumerate(bits):
             plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
         plt.xlim([self.lower - self.df * 5, self.upper + self.df * 5])
-        plt.show()
+        if show:
+            plt.show()
 
 def test_class(obj, Nbits=10):
     print("Starting test...")

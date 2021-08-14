@@ -93,7 +93,7 @@ class OOKSimpleExp():
         print("in: ", bits.flatten(), "out: ", np.array(result), "in == out", np.all(result == bits.flatten()), "hits:", self._count)
         return result
 
-    def plot(self, signal, bits, title=""):
+    def plot(self, signal, bits, show=False, title=""):
         """
         plots the encoded message uses signal and bits if provided
         """
@@ -106,13 +106,17 @@ class OOKSimpleExp():
         plt.title(title+"\nbits input: "+ "".join([str(b) for b in bits.flatten()]))
         for idx, bit in enumerate(bits):
             plt.vlines(idx * self.Ts, -1.1, 1.1, "r")
+        if show:
+            plt.show()
 
-    def plot_spectrum(self, signal):
+    def plot_spectrum(self, signal, show=False):
         temp = None
 
         f = np.r_[0: self.N/2.0] / self.N * self.fs
         s = fft.fft(signal)
         plt.plot(f, np.abs(s[:len(s) //2]))
+        if show:
+            plt.show()
 
 
 def test_class(obj, Nbits=10):

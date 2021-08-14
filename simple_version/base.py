@@ -13,6 +13,7 @@ Ch1 Ch2
 | 0.1 -12
 v
 """
+import matplotlib.pyplot as plt
 import time 
 import os
 import sys
@@ -35,14 +36,14 @@ gen_offset = 0
 
 #ook
 Ts=30e-03
-fs=44000
+fs=20000
 fc=1800
 Nbits=10
 device = OOKSimpleExp(Ts, fs, fc, Nbits)
 device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
 bits = device.generate()
 signal = device.encode(bits)
-#device.plot(signal, bits)
+device.plot(signal, bits, show=True)
 
 
 #fdm
