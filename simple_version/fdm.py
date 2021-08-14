@@ -10,6 +10,7 @@ https://www.cwnp.com/understanding-ofdm-part-2-2/ for baud rate
 
 """
 
+from scipy import signal as scipysignal
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 22})
@@ -66,11 +67,26 @@ class FDMSimple:
 
         Ns = self.Ns
         result = []
+        signal = scipysignal.detrend(signal)
         s = np.abs(fft.fft(signal))
-        idx , _ = find_peaks(s, height=np.max(s)/ 2.0)
+        idx , _ = find_peaks(s, height=np.max(s)/ 4.0)
         idx = idx[:len(idx) // 2] #only the postive part
         freq = fft.fftfreq(len(s), self.t[1] - self.t[0])
         freq = freq[:len(s) // 2]
+
+        lower = self.fc - self.Nbits // 2 * self.df
+
+        #EPSILON = 10 # should be fine since df is > 100
+        #for k in range(self.Nbits):
+        #    ftest = lower + k * self.df
+        #    idx = np.where( np.abs(ftest - freq) < EPSILON)
+        #    idx #is a range in the worst case in best case its a single point
+        #    if np.sum(s[idx]) > np.average(s):
+        #        result.append(1)
+        #    else:
+        #        result.append(0)
+        #    #or 
+        #    if 
 
         EPSILON = 10
         idx = list(idx)
