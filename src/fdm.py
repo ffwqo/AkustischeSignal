@@ -154,6 +154,7 @@ class FDMSimple:
         self.Ns = int( self.fs / self.baud ) #number of samples points per symbol
         self.N = self.Nbits * self.Ns
         self.t = np.r_[0.0 : self.N] / self.fs
+        print(len(self.t))
         self.generate = generate
 
         if generate:
@@ -239,7 +240,8 @@ class FDMSimple:
         freq = freq[:len(s) // 2]
         s = s[:len(s) // 2]
         plt.plot(freq, s)
-        plt.title("".join([str(b) for b in self.bits]))
+        plt.title("Frequenzspektrum bits input: " + "".join([str(b) for b in self.bits.flatten()]))
+        plt.xlabel("f [Hz]")
         for idx, bit in enumerate(self.bits):
             plt.vlines(self.lower + idx * self.df, np.max(s) * -0.01 , np.max(s) * 1.1, "r", linestyle="dashed")
         plt.xlim([self.lower - self.df * 5, self.upper + self.df * 5])
@@ -290,6 +292,6 @@ def fdm_decode(signal, t, lower, df, Nbits, testing=False, bits=None):
     return result
 
 if __name__ == "__main__":
-    test_class(FDMSimple)
+    plot_class(FDMSimple)
     pass
 

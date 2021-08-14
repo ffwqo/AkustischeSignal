@@ -140,7 +140,63 @@ class OFDM:
 
     def error_estimate(self):
         pass
+class OFDM802_11a:
+    """
+    implements https://rfmw.em.keysight.com/wireless/helpfiles/89600b/webhelp/subsystems/wlan-ofdm/content/resources/image/ofdm%20symbol%20generation%20.png
+    """
+    def __init__(self):
+        # FFT BLOCK
+        # [-26, -25, -24, ..., -1, 0, 1, ..., 25, 26] => 53?
+        self.nsubcarriers = 52
+        self.ndata = 48
+        self.npilot = 4
+        self.idx_pilot = [-21, -7, 7, 21]
+        self.idx_pilot = [0, 13, 38,51]
+        self.pilot_amp = 1
+        self.cp = int(0.25 * 52)
+        self.df = 312.5e03
+        self.fc = 20e06
+        pass
+    def encode(self, bits):
 
+        pilot_value = 0
+        center_value = 0
+        if len(bits) % 4 != 0:
+            print("Bit array input length should be a multiple of 4")
+        chunks = np.split(bits, len(bits) / 4)
+        chunks = [ int( "".join([str(i) for i in chunk]), 2) for chunk in chunks]
+        mapped_bits = [ QAM16[i] for i in chunks]
+        pad = (-1* len(mapped_bits)) % 48 # i.e. (-12) % 48 = 36 
+        chunks = np.r_ [mapped_bits, [0 for i in range(pad)]]
+        signal = []
+        for i in range(len(chunks) // 48):
+            temp = chunks[i*48: (i+1)*48]
+            data = np.zeros(52, dtype=complex)
+            #for k in range(-26,26):
+            #    if i == -21 or k == -7 or k == 7 or k == 21:
+            #        data[k] = self.pilot_amp
+            #    else:
+            #        data[k] = temp[i]
+            #
+            idx = 0
+            for k in range(52):
+                if k in self.idx_pilot:
+                #if i == 0 or i == 12 or i == 38 or i == 51: #every 13th entry is a pilot
+                    data[i] = self.pilot_amp
+                else:
+                    data[k] = temp[idx]
+                    idx += 1
+            signal.append(data)
+        #add cp
+        result = []
+        for i in range(len(signal)):
+            complex_signal = fft.ifft(signal[i])
+            new_signal = np.r_ [ signal[i][:self.cp], complex_signal]
+            result.append(new_signal)
+        return np.concatenate(result)
+
+    def decode(self, bits):
+        pass
 
 def test_class(obj, Nbits=10):
     print("Starting test...")
@@ -159,6 +215,9 @@ def plot_class(obj):
     ex.plot()
 
 if __name__ == "__main__":
-    test_class(OFDM)
-    pass
-
+    x = OFDM802_11a()
+    bits = [ int(i) for i in (np.random.rand(48*4) > 0.5)]
+    signal = x.encode(np.array(bits))
+    fsignal = fft.fft(signal)
+    plt.plot(np.abs(fsignal))
+    plt.show()

@@ -207,7 +207,7 @@ class OOKSimpleExp(OOK):
         temp1 = None
         temp2 = None
         if signal is not None and bits is not None:
-            assert(self.signal.shape == signal.shape and bits.shape == bits.shaoe)
+            assert(self.signal.shape == signal.shape and bits.shape == bits.shape)
             temp1, temp2 = self.signal, self.bits
             self.signal, self.bits = signal, bits
         temp = np.zeros(self.N)
@@ -216,7 +216,7 @@ class OOKSimpleExp(OOK):
         plt.plot(self.t, temp, "g--")
         plt.plot(self.t, self.signal)
         plt.xlabel("t [s]")
-        plt.title("".join([str(b) for b in self.bits]))
+        plt.title("bits input: "+ "".join([str(b) for b in self.bits.flatten()]))
         for idx, bit in enumerate(self.bits):
             plt.vlines(idx * self.Ts, -1.1, 1.1, "r")
         if temp1 is not None and temp2 is not None:
