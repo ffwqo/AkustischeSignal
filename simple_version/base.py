@@ -148,6 +148,8 @@ if scp and gen:
     del gen
     signal_scp = result[:, 1]
     signal_gen = result[:, 0]
+    print(signal_scp.shape, signal_gen.shape)
+    print(result.shape)
     device.decode(signal_scp, bits)
     device.plot(signal_scp[:len(signal)], bits, title="Scp Signal")
     plt.show()
@@ -159,5 +161,4 @@ else:
     print("No device avaible for measurement")
     sys.exit(1)
 
-print(data.shape)
 
