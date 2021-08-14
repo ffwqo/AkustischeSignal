@@ -92,6 +92,7 @@ fs=44000
 fc=1800
 Nbits=10
 
+
 if scp and gen:
     try:
 
@@ -138,11 +139,12 @@ if scp and gen:
     except Exception as e:
         print("Exception: " + str(e))
         print(sys.exc_info()[0], flush=True)
-        sys.exit(1)
+        #sys.exit(1)
 
     del scp
     del gen
     signal_scp = result[:, 1]
+    signal_gen = result[:, 0]
     device.decode(signal, bits)
     device.plot(signal, bits, title="Scp Signal")
     plt.show()
