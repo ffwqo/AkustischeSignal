@@ -87,9 +87,9 @@ class FDMSimple:
             else:
                 result.append(0)
         #comment this out for testing
-        #print("in: ", self.bits.flatten())
-        #print("out:", np.array(result))
-        #print("in == out", np.all(result == self.bits.flatten()))
+        print("in: ", bits.flatten())
+        print("out:", np.array(result))
+        print("in == out", np.all(result == bits.flatten()))
         if testing :
             assert(np.all(result == bits.flatten()))
         return result
