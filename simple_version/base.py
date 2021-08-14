@@ -151,11 +151,11 @@ if scp and gen:
     print(signal_scp.shape, signal_gen.shape)
     print(result.shape)
     bits_decode = device.decode(signal_scp, bits)
-    print("bits in: ", bits)
+    print("bits in: ", bits.flatten())
     print("bits decode: ", bits_decode)
-    device.plot(signal_scp[:len(signal)], bits, title="Scp Signal")
+    device.plot(signal_scp[:len(signal)], bits, title="Ch2 Signal")
     plt.show()
-    device.plot(signal_gen[:len(signal)], bits, title="gen Signal")
+    device.plot(signal_gen[:len(signal)], bits, title="Ch1 Signal")
     plt.show()
 
 
