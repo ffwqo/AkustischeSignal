@@ -175,7 +175,8 @@ class OsciDevice():
             self.scp_dict[libtiepie.MM_BLOCK] = scp
             self.gen_dict[libtiepie.MM_BLOCK] = gen
         else:
-            click.echo("SCP/GEN NOT FOUND FOR MM_BLOCK")
+            click.echo("SCP/GEN NOT FOUND FOR MM_BLOCK from main.py")
+
         scp = None
         gen = None
         #then scp+gen for MM_STREAM
@@ -192,7 +193,7 @@ class OsciDevice():
             self.scp_dict[libtiepie.MM_STREAM] = scp
             self.gen_dict[libtiepie.MM_STREAM] = gen
         else:
-            click.echo("SCP/GEN NOT FOUND FOR MM_STREAM")
+            click.echo("SCP/GEN NOT FOUND FOR MM_STREAM from main.py")
 
         if self.scp_mode in self.scp_dict:
             self.scp = self.scp_dict[self.scp_mode]
