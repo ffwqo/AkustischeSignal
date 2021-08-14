@@ -26,14 +26,6 @@ from ook import OOKSimpleExp
 from fdm import FDMSimple
 
 
-
-N = 20000
-scp_fs = 20e3
-scp_record_length = 10000
-gen_fs = 20e3
-gen_amp = 4
-gen_offset = 0
-
 #ook
 Ts=30e-03
 fs=20000
@@ -60,6 +52,15 @@ device.plot(signal, bits, show=False)
 
 
 data = array("f", signal)
+
+
+
+N = 20000
+scp_fs = 20e3
+scp_record_length = 10000 #len(data)
+gen_fs = 20e3
+gen_amp = 4
+gen_offset = 0
 
 
 libtiepie.network.auto_detect_enabled = True
@@ -147,9 +148,9 @@ if scp and gen:
     signal_scp = result[:, 1]
     signal_gen = result[:, 0]
     device.decode(signal_scp, bits)
-    device.plot(signal_scp, bits, title="Scp Signal")
+    device.plot(signal_scp[:len(data)], bits, title="Scp Signal")
     plt.show()
-    device.plot(signal_gen, bits, title="gen Signal")
+    device.plot(signal_gen[:len(data)], bits, title="gen Signal")
     plt.show()
 
 
