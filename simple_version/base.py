@@ -39,7 +39,7 @@ Nbits=10
 ook_device = OOKSimpleExp(Ts, fs, fc, Nbits)
 bits = ook_device.generate()
 signal = ook_device.encode(bits)
-ook_device.plot(signal, bits)
+#ook_device.plot(signal, bits)
 data = array("f", signal)
 
 
@@ -93,13 +93,15 @@ if scp and gen:
             print("Data overflow")
             #TODO something eror
         data = scp.get_data()
+        data = np.array(data)
+        print(data.shape)
         header = ""
 
 
         for i in range(len(scp.channels)):
             header += "Ch{}\t".format(i+1) 
 
-        np.savetxt(filename, np.array(data).transpose(), header=header)
+        np.savetxt(filename, data.transpose(), header=header)
         print("Written file!", flush=True)
 
         scp.stop()
