@@ -38,10 +38,11 @@ Ts=30e-03
 fs=44000
 fc=1800
 Nbits=10
-ook_device = OOKSimpleExp(Ts, fs, fc, Nbits)
-bits = ook_device.generate()
-signal = ook_device.encode(bits)
-#ook_device.plot(signal, bits)
+device = OOKSimpleExp(Ts, fs, fc, Nbits)
+device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
+bits = device.generate()
+signal = device.encode(bits)
+#device.plot(signal, bits)
 
 
 #fdm
@@ -50,10 +51,11 @@ signal = ook_device.encode(bits)
 #fc=1800
 #df = 100
 #Nbits=10
-#fdm_device = FDMSimple(Ts, fs, fc, df, Nbits)
-#bits = fdm_device.generate()
-#signal = fdm_device.encode(bits)
-#fdm_device.plot(signal, bits)
+#device = FDMSimple(Ts, fs, fc, df, Nbits)
+#device_header = f"Ts: {Ts} fs: {fs} fc: {fc} df: {df} Nbits: {Nbits}"
+#bits = device.generate()
+#signal = device.encode(bits)
+#device.plot(signal, bits)
 
 
 data = array("f", signal)
@@ -74,12 +76,21 @@ for item in libtiepie.device_list:
                 break
         else:
             scp = None
-print(scp, gen, flush=True)
 filename="measure_data_block.txt"
 i = 0
 while os.path.isfile(filename):
     filename = "measure_data_block_{}.txt".format(i)
     i += 1
+header = f"bits: {list(bits.flatten())}\n"
+header += f"N: {N} scp_fs: {scp_fs } scp_rl: {scp_record_length } gen_fs: {gen_fs } gen_amp: {gen_amp } gen_offset: {gen_offset }\n"
+header += f"{device}\n"
+header += device_header
+
+#ook
+Ts=30e-03
+fs=44000
+fc=1800
+Nbits=10
 
 if scp and gen:
     try:
@@ -111,7 +122,6 @@ if scp and gen:
         data = scp.get_data()
         data = np.array(data)
         print(data.shape)
-        header = ""
 
 
         for i in range(len(scp.channels)):
