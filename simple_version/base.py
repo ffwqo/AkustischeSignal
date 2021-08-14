@@ -27,37 +27,38 @@ from fdm import FDMSimple
 
 
 #ook
+#Ts=30e-03
+#fs=20000
+#fc=1800
+#Nbits=10
+#device = OOKSimpleExp(Ts, fs, fc, Nbits)
+#device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
+#bits = device.generate()
+#signal = device.encode(bits)
+#device.plot(signal, bits, show=False)
+
+
+#fdm
 Ts=30e-03
-fs=20000
+fs=44000
 fc=1800
+df = 100
 Nbits=10
-device = OOKSimpleExp(Ts, fs, fc, Nbits)
-device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
+device = FDMSimple(Ts, fs, fc, df, Nbits)
+device_header = f"Ts: {Ts} fs: {fs} fc: {fc} df: {df} Nbits: {Nbits}"
 bits = device.generate()
 signal = device.encode(bits)
 device.plot(signal, bits, show=False)
 
 
-#fdm
-#Ts=30e-03
-#fs=44000
-#fc=1800
-#df = 100
-#Nbits=10
-#device = FDMSimple(Ts, fs, fc, df, Nbits)
-#device_header = f"Ts: {Ts} fs: {fs} fc: {fc} df: {df} Nbits: {Nbits}"
-#bits = device.generate()
-#signal = device.encode(bits)
-#device.plot(signal, bits)
-
-
+print(signal.shape)
 data = array("f", signal)
 
 
 
 N = 20000
 scp_fs = 20e3
-scp_record_length = 10000 #len(data)
+scp_record_length = 20000 #len(data)
 gen_fs = 20e3
 gen_amp = 4
 gen_offset = 0
@@ -148,9 +149,9 @@ if scp and gen:
     signal_scp = result[:, 1]
     signal_gen = result[:, 0]
     device.decode(signal_scp, bits)
-    device.plot(signal_scp[:len(data)], bits, title="Scp Signal")
+    device.plot(signal_scp[:len(signal)], bits, title="Scp Signal")
     plt.show()
-    device.plot(signal_gen[:len(data)], bits, title="gen Signal")
+    device.plot(signal_gen[:len(signal)], bits, title="gen Signal")
     plt.show()
 
 
