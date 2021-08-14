@@ -35,7 +35,7 @@ class Measurment():
         assert(scp != None)
         assert(gen != None)
         assert(config_dict != None)
-        assert(len(chunks) ==1 and config_dict["mode"] == "BLOCK")
+        assert(len(chunks) ==1 and config_dict["scp_mode"] == "BLOCK")
         self.scp = scp
         self.gen = gen
         self.chunks = [array("f", chunk) for chunk in chunks]
