@@ -60,7 +60,7 @@ N = 20000
 scp_fs = 20e3
 scp_record_length = 20000 #len(data)
 gen_fs = 20e3
-gen_amp = 4
+gen_amp = 8
 gen_offset = 0
 
 

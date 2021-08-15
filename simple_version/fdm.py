@@ -65,6 +65,13 @@ class FDMSimple:
 
     def decode(self, signal, bits, testing=False):
 
+        lower = self.fc - self.Nbits // 2 * self.df
+        upper = self.fc + self.Nbits // 2 * self.df
+        df = self.df
+        #sos filt
+        b = scipysignal.butter(11, [lower - 4 * df, upper + 4 * df], btype="bandpass", fs=self.fs, output="sos") #fs has to be real sampling rate?
+        signal = scipysignal.sosfilt(b, signal)
+
         Ns = self.Ns
         result = []
         signal = scipysignal.detrend(signal)
@@ -74,9 +81,8 @@ class FDMSimple:
         freq = fft.fftfreq(len(s), self.t[1] - self.t[0])
         freq = freq[:len(s) // 2]
 
-        lower = self.fc - self.Nbits // 2 * self.df
 
-        #EPSILON = 10 # should be fine since df is > 100
+        #EPSILON = 50 # should be fine since df is > 100
         #for k in range(self.Nbits):
         #    ftest = lower + k * self.df
         #    idx = np.where( np.abs(ftest - freq) < EPSILON)
@@ -86,7 +92,8 @@ class FDMSimple:
         #    else:
         #        result.append(0)
         #    #or 
-        #    if 
+
+
 
         EPSILON = 10
         idx = list(idx)
