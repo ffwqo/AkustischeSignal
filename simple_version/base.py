@@ -88,8 +88,12 @@ else:
 
 i = 0
 while os.path.isfile(filename):
-    filename += "_{}.txt".format(i)
+    if os.path.isdir("./messdaten"):
+        filename=f"messdaten/measure_data_block_{i}.txt"
+    else:
+        filename=f"measure_data_block_{i}.txt"
     i += 1
+print(filename)
 header = f"bits: {list(bits.flatten())}\n"
 header += f"N: {N} scp_fs: {scp_fs } scp_rl: {scp_record_length } gen_fs: {gen_fs } gen_amp: {gen_amp } gen_offset: {gen_offset }\n"
 header += f"{device}\n"
