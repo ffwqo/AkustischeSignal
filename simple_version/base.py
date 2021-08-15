@@ -27,7 +27,7 @@ from fdm import FDMSimple
 
 
 #ook
-Ts=30e-03
+Ts=30e-02
 fs=20000
 fc=1800
 Nbits=10
