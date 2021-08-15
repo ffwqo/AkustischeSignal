@@ -40,7 +40,6 @@ for i in range(Nbits):
 
 data = array("f", data)
 libtiepie.network.auto_detect_enabled = True
-
 libtiepie.device_list.update()
 
 scp = None 
@@ -48,17 +47,17 @@ gen = None
 for item in libtiepie.device_list:
     if ( item.can_open(libtiepie.DEVICETYPE_OSCILLOSCOPE)) and (item.can_open(libtiepie.DEVICETYPE_GENERATOR)):
         scp = item.open_oscilloscope()
-        if scp.measure_modes & libtiepie.MM_BLOCK:
+        if scp.measure_modes & libtiepie.MM_STREAM:
             gen = item.open_generator()
-            if gen.signal_type & libtiepie.ST_ARBITRARY:
-                break
+            break
         else:
             scp = None
+
 print(scp, gen, flush=True)
 
 if scp and gen:
     try:
-        scp.measure_mode = libtiepie.MM_BLOCK
+        scp.measure_mode = libtiepie.MM_STREAM
         scp.sample_frequency = 20e3
         scp.record_length = 10000
         for ch in scp.channels:

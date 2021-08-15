@@ -151,11 +151,12 @@ if scp and gen:
         test_result = []
         signal_list = []
         bits_list = []
+        scp.start()
         for i in range(TEST_RUNS):
             signal_list.append(data)
             bits_list.append(bits)
             gen.set_data(data)
-            scp.start()
+            scp.get_data() # hack to clear buffer
             gen.start()
 
             while not (scp.is_data_ready or scp.is_data_overflow):
@@ -181,14 +182,14 @@ if scp and gen:
                 print("Written file!", flush=True)
 
             gen.stop()
-            scp.stop()
+            print("Stopped gen ", flush=True)
             bits = device.generate(Nbits)
             signal = device.encode(bits)
             data = array("f", signal)
         np.savetxt(filename + "_testrun_all.txt", np.array(test_result), header=header)
+        scp.stop()
         
         print("Stopped scp ", flush=True)
-        print("Stopped gen ", flush=True)
     except Exception as e:
         print("Exception: " + str(e))
         print(sys.exc_info()[0], flush=True)

@@ -31,13 +31,13 @@ A = 10
 N = 8192
 data = zeros(N, 1)
 fs = 20e+3
-T = 1 / fs
-x = linspace(0.0, N * T, N)
+T = 1 / fs;
+x = linspace(0.0, N * T, N);
 for i = 1:size(x)
-    result = 0
+    result = 0;
     for j = 1:Nbits
         result = result + bit * A * sin( 2 * pi * x)
-    data(i, 1) = result)
+    data(i, 1) = result;
 
 
 %%%%
