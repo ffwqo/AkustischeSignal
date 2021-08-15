@@ -77,6 +77,25 @@ class OOKSimpleExp():
         plt.plot(self.t, temp, "g--")
         return signal
 
+    def dumb_decode(self, signal, bits):
+        """Ensure first bit is zero for a pilot"""
+        Ns = self.Ns
+        Nbits = self.Nbits
+        assert(len(bits == Nbits))
+        pilot_amp = np.average(signal[: Ns])
+        result = [0]
+        for i in range(1, Nbits):
+            avg = np.average(signal[i * Ns: (i+1) * Ns])
+            if avg > pilot_amp:
+                result.append(1)
+            else:
+                result.append(0)
+        print("bits in: ", bits.flatten(), len(bits.flatten()))
+        print("decode: ", result, len(result))
+        print("in==out ", result==list(bits.flatten())) 
+        return result
+
+
     def decode(self, signal, bits):
         """
         signal: signal to encode not saved
@@ -84,6 +103,7 @@ class OOKSimpleExp():
         """
         Ns = self.Ns
         result = []
+        
         for i in range( self.Nbits ):
             idx, _ = find_peaks(signal[i * Ns : (i+1) * Ns], height=np.max(signal) / 4)
             if len(idx) > 1:
@@ -141,8 +161,10 @@ def plot_class(obj):
 if __name__ == "__main__":
     ook = OOKSimpleExp()
     bits = ook.generate()
+    bits[0] = 0
+    print(bits)
     signal = ook.encode(bits)
-    result = ook.decode(signal, bits)
+    result = ook.dumb_decode(signal, bits)
     ook.plot(signal, bits)
     plt.show()
 
