@@ -58,6 +58,9 @@ class OOKSimpleExp():
         """
         assert(len(bits) == self.Nbits)
         M = np.tile(bits, (1, self.Ns ))
+        signal = M.ravel() * np.sin(2 * np.pi * self.fc * t)
+        return signal
+
         temp = np.zeros(self.N)
         for i, b in enumerate(bits):
             temp += b * self._ampl(self.t, (i + 0.5) * self.Ts, self.Ts / 10)

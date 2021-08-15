@@ -35,7 +35,7 @@ device = OOKSimpleExp(Ts, fs, fc, Nbits)
 device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
 bits = device.generate()
 signal = device.encode(bits)
-device.plot(signal, bits, show=False)
+#device.plot(signal, bits, show=False)
 
 
 #fdm
@@ -48,7 +48,7 @@ device.plot(signal, bits, show=False)
 #device_header = f"Ts: {Ts} fs: {fs} fc: {fc} df: {df} Nbits: {Nbits}"
 #bits = device.generate()
 #signal = device.encode(bits)
-#device.plot(signal, bits, show=False)
+##device.plot(signal, bits, show=False)
 
 
 print(signal.shape)
@@ -93,6 +93,7 @@ header = f"bits: {list(bits.flatten())}\n"
 header += f"N: {N} scp_fs: {scp_fs } scp_rl: {scp_record_length } gen_fs: {gen_fs } gen_amp: {gen_amp } gen_offset: {gen_offset }\n"
 header += f"{device}\n"
 header += device_header
+header += f"{time.asctime()}"
 
 #ook
 Ts=30e-03
