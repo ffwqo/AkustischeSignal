@@ -8,9 +8,11 @@ from <filename> import *
 adapted from 
 https://rfmw.em.keysight.com//wireless/helpfiles/89600b/webhelp/subsystems/wlan-ofdm/Content/ofdm_basicprinciplesoverview.htm
 https://colab.research.google.com/github/varun19299/wireless-lab-iitm/blob/notebooks/4-ofdm-python.ipynb#scrollTo=AzE6CH2CUs4s
+https://de.mathworks.com/help/lte/ug/channel-estimation.html
 
 """
 
+import scipy
 from scipy import signal as scipysignal
 import numpy as np
 import matplotlib.pyplot as plt
@@ -57,6 +59,7 @@ class OFDM:
         self.Npilot += 1
         data_idx = np.delete(allidx, pilot_idx)
 
+        self.allidx = allidx
         self.pilot_idx = pilot_idx
         self.data_idx = data_idx
         self.Ndata = len(data_idx)
@@ -101,7 +104,7 @@ class OFDM:
         return result
 
     def decode(self, signal, testing=False):
-        """returns a list of demod complex symbols per burst"""
+        """returns a list of demod complex data symbols per burst i.e. should be of length 55 per burst"""
 
         #demod 
         numberOfBurst = len(signal) // (self.cp + self.Nsubcarrier)
@@ -112,9 +115,24 @@ class OFDM:
             temp = signal[i * offset : (i+1) * offset]
             temp = temp[self.cp:]
             demod = fft.fft(temp)
-            demodlist.append(demod)
+            
+            channel_estimate = self._channel_estimate(demod) #estimate
+            equalize = self._equalize(demod, channel_estimate) #equalize
+
+            demodlist.append(demod[self.data_idx])
         return demodlist
 
+    def _equalize(self, demod, hest):
+        return demod / hest
+    def _channel_estimate(self, demod):
+        """demod: demodulated signal and cp removed to estimate the effect of transmission for use in equalize"""
+        transmittedPilots = demod[self.pilot_idx]
+        h = transmittedPilots / self.pilot_amp
+        #simple linear fit
+        estimate = scipy.interpolate.interp1d(self.pilot_idx, np.abs(h), kind="linear")(self.allidx)
+        estimatePhase = scipy.interpolate.interp1d(self.pilot_idx, np.angle(h), kind="linear")(self.allidx)
+        hest = estimate * np.exp(1j * estimatePhase)
+        return hest
 
 
     def plot(self, signal, bits, show=False, title="", style="b"):
@@ -142,6 +160,7 @@ if __name__ == "__main__":
     device = OFDM()
     bits = device.generate()
     signal = device.encode(bits)
-    print(device.decode(signal))
+    demod = device.decode(signal)[0]
+    print(demod)
 
 
