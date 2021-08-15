@@ -152,12 +152,15 @@ if scp and gen:
         signal_list = []
         bits_list = []
         scp.start()
+        print("scp started!")
         for i in range(TEST_RUNS):
             signal_list.append(data)
             bits_list.append(bits)
             gen.set_data(data)
+            print("Set data")
             scp.get_data() # hack to clear buffer
             gen.start()
+            print("gen started")
 
             while not (scp.is_data_ready or scp.is_data_overflow):
                 time.sleep(0.01)
