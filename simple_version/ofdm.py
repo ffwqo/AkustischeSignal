@@ -72,6 +72,7 @@ class OFDM:
 
     def encode(self, bits):
         """use bit array of length 220, 440, 660, etc. for no pad"""
+        """returns encoded signal and mapped bit array for checking"""
         assert(len(bits) % 4 == 0)
         Ndata = self.Ndata
         chunks = np.split(bits, len(bits) // 4)
@@ -101,11 +102,17 @@ class OFDM:
             temp = np.r_ [ complex_signal[-cp:], complex_signal]
             signal.append(temp)
         result = np.concatenate(signal)
-        return result
+        #interleave
+        endsignal = np.zeros(len(result) * 2)
+        endsignal[::2] = np.real(result) #even parts carry real
+        endsignal[1::2] = np.imag(result) #odd carry imag
+        
+        return endsignal, chunks
 
-    def decode(self, signal, testing=False):
+    def decode(self, insignal, mapped_bits, testing=False):
         """returns a list of demod complex data symbols per burst i.e. should be of length 55 per burst"""
-
+        signal = insignal[::2] + 1j * insignal[1::2]
+        
         #demod 
         numberOfBurst = len(signal) // (self.cp + self.Nsubcarrier)
         offset = self.cp + self.Nsubcarrier
@@ -120,6 +127,19 @@ class OFDM:
             equalize = self._equalize(demod, channel_estimate) #equalize
 
             demodlist.append(demod[self.data_idx])
+        
+        demodlist = np.concatenate(demodlist)
+        #assert(len(demod) == len(mapped_bits))
+        print(f"Len in: {len(mapped_bits)} len out: {len(demodlist)}")
+        EPSILON = 0.5
+        count = 0
+        for d,m in zip(demodlist, mapped_bits):
+            if (np.abs(d-m) < EPSILON):
+                count += 1
+        if count == len(mapped_bits):
+            print("in == out true")
+        else:
+            print("in == out false")
         return demodlist
 
     def _equalize(self, demod, hest):
@@ -159,8 +179,7 @@ def plot_class(obj):
 if __name__ == "__main__":
     device = OFDM()
     bits = device.generate()
-    signal = device.encode(bits)
-    demod = device.decode(signal)[0]
-    print(demod)
+    signal, mapped_bits= device.encode(bits)
+    demod = device.decode(signal, mapped_bits)
 
 

@@ -24,33 +24,42 @@ import numpy as np
 
 from ook import OOKSimpleExp
 from fdm import FDMSimple
+from ofdm import OFDM
 
 
 #ook
-Ts=30e-03
-fs=20000
-fc=1800
-Nbits=10
-device = OOKSimpleExp(Ts, fs, fc, Nbits)
-device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
-bits = device.generate()
-bits[0] = 0
-signal = device.encode(bits)
-print(signal.shape)
+#Ts=30e-03
+#fs=20000
+#fc=1800
+#Nbits=10
+#device = OOKSimpleExp(Ts, fs, fc, Nbits)
+#device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
+#bits = device.generate()
+#bits[0] = 0
+#signal = device.encode(bits)
+#print(signal.shape)
 #device.plot(signal, bits, show=False)
 
 
 #fdm
-#Ts=30e-03
-#fs=44000
-#fc=1800
-#df = 100
-#Nbits=10
+#Ts=10e-5
+#fs=20e6
+#fc=50e4
+#df = 2e3
+#Nbits=50
 #device = FDMSimple(Ts, fs, fc, df, Nbits)
 #device_header = f"Ts: {Ts} fs: {fs} fc: {fc} df: {df} Nbits: {Nbits}"
 #bits = device.generate()
 #signal = device.encode(bits)
 ##device.plot(signal, bits, show=False)
+
+#ofdm
+Nsubcarrier=64
+Npilot=8
+pilot_amp=3+3j
+device = OFDM(Nsubcarrier, Npilot, pilot_amp)
+device_header = "Nsubcarrier: {} Npilot: {} pilot_amp: {}".format(Nsubcarrier, Npilot, pilot_amp)
+print(device_header)
 
 
 print(signal.shape)
@@ -59,9 +68,9 @@ data = array("f", signal)
 
 
 N = 20000
-scp_fs = 20e3
+scp_fs = 20e6
 scp_record_length = 20000 #len(data)
-gen_fs = 20e3
+gen_fs = 20e6
 gen_amp = 8
 gen_offset = 0
 
@@ -153,9 +162,6 @@ if scp and gen:
         print("Stopped gen ", flush=True)
     except Exception as e:
         print("Exception: " + str(e))
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno)
         print(sys.exc_info()[0], flush=True)
         #sys.exit(1)
 
@@ -165,7 +171,7 @@ if scp and gen:
     signal_gen = result[:, 0]
     print(signal_scp.shape, signal_gen.shape)
     print(result.shape)
-    bits_decode = device.dumb_decode(signal_scp, bits)
+    bits_decode = device.decode(signal_scp, bits)
     print("bits in: ", bits.flatten())
     print("bits decode: ", bits_decode)
     device.plot(signal_scp[:len(signal)], bits, title="Ch2 Signal")
