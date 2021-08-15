@@ -28,13 +28,14 @@ from fdm import FDMSimple
 
 #ook
 Ts=30e-02
-fs=20000
+fs=6000
 fc=1800
 Nbits=10
 device = OOKSimpleExp(Ts, fs, fc, Nbits)
 device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
 bits = device.generate()
 signal = device.encode(bits)
+print(signal.shape)
 #device.plot(signal, bits, show=False)
 
 
