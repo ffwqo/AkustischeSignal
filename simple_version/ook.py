@@ -58,7 +58,7 @@ class OOKSimpleExp():
         """
         assert(len(bits) == self.Nbits)
         M = np.tile(bits, (1, self.Ns ))
-        signal = M.ravel() * np.sin(2 * np.pi * self.fc * t)
+        signal = M.ravel() * np.sin(2 * np.pi * self.fc * self.t)
         return signal
 
         temp = np.zeros(self.N)
