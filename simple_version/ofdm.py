@@ -44,7 +44,7 @@ QAM16 = {
 ################
 
 class OFDM:
-    """ofdm after 802.1a standard"""
+    """ofdm after 802.11a standard"""
 
     def __init__(self, Nsubcarrier=64, Npilot=8, pilot_amp=3+3j):
 

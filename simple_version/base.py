@@ -24,19 +24,20 @@ import numpy as np
 
 from ook import OOKSimpleExp
 from fdm import FDMSimple
+from ofdm import OFDM
 
 
 #ook
-Ts=30e-03
-fs=20000
-fc=1800
-Nbits=10
-device = OOKSimpleExp(Ts, fs, fc, Nbits)
-device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
-bits = device.generate()
-bits[0] = 0
-signal = device.encode(bits)
-print(signal.shape)
+#Ts=30e-03
+#fs=20000
+#fc=1800
+#Nbits=10
+#device = OOKSimpleExp(Ts, fs, fc, Nbits)
+#device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
+#bits = device.generate()
+#bits[0] = 0
+#signal = device.encode(bits)
+#print(signal.shape)
 #device.plot(signal, bits, show=False)
 
 
@@ -52,6 +53,17 @@ print(signal.shape)
 #signal = device.encode(bits)
 ##device.plot(signal, bits, show=False)
 
+#ofdm
+#802.11a standard 312.5kHz carrier seperation BW 20MHz OBW 16.6 MHz
+Nsubcarrier = 64
+Npilot = 8
+pilot_amp = 3+3j
+Nbits = 220 #should be k * 220 , k = 1,2,3,4,...
+device = OFDM(Nsubcarrier, Npilot, pilot_amp)
+bits = device.generate(Nbits)
+signal = device.encode(bits)
+device_header = f"Nsubcarrier: {Nsubcarrier} Npilot: {Npilot} pilot_amp: {pilot_amp} Nbits: {Nbits}"
+##device.plot(signal, bits, show=False) #not implemented yet
 
 print(signal.shape)
 data = array("f", signal)
