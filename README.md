@@ -1,11 +1,9 @@
 
 
-src/ the program 
+simple_version/base.py the program
 
-- main.py terminal mode
-- main_gui.py dearpygui
-
-misc/ misc old files 
+misc/ misc old files
+src/ a gui and terminal version some error that were not fixed 
 
 # Installation
 
