@@ -58,6 +58,9 @@ Nsubcarrier=64
 Npilot=8
 pilot_amp=3+3j
 device = OFDM(Nsubcarrier, Npilot, pilot_amp)
+bits = device.generate()
+signal, mapped_bits = device.encode(bits)
+device.decode(signal, mapped_bits)
 device_header = "Nsubcarrier: {} Npilot: {} pilot_amp: {}".format(Nsubcarrier, Npilot, pilot_amp)
 print(device_header)
 

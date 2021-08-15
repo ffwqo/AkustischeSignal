@@ -39,6 +39,7 @@ QAM16 = {
   int( "".join([str(i) for i in list( (1,1,1,0) )]), 2) :  1+3j,
   int( "".join([str(i) for i in list( (1,1,1,1) )]), 2) :  1+1j
 }
+DEQAM16 = { v:k for k,v in QAM16.items()}
 
 
 ################
@@ -125,22 +126,34 @@ class OFDM:
             
             channel_estimate = self._channel_estimate(demod) #estimate
             equalize = self._equalize(demod, channel_estimate) #equalize
-
             demodlist.append(demod[self.data_idx])
-        
         demodlist = np.concatenate(demodlist)
-        #assert(len(demod) == len(mapped_bits))
-        print(f"Len in: {len(mapped_bits)} len out: {len(demodlist)}")
-        EPSILON = 0.5
-        count = 0
-        for d,m in zip(demodlist, mapped_bits):
-            if (np.abs(d-m) < EPSILON):
-                count += 1
-        if count == len(mapped_bits):
-            print("in == out true")
+
+        vlist = np.array(list(QAM16.values()))
+        x = [vlist[np.argmin([np.abs(i - v) for v in vlist])] for i in demodlist]
+        for i,j in zip(x, demodlist):
+            print(i, j)
+
+        decoded = [ DEQAM16[i] for i in x]
+        decoded = [list("{0:04b}".format(k)) for k  in decoded]
+        decoded = [ [int(i) for i in d] for d in decoded]
+        decoded = np.concatenate(decoded)
+
+        if not testing:
+            return decoded
         else:
-            print("in == out false")
-        return demodlist
+            #assert(len(demod) == len(mapped_bits))
+            print(f"Len in: {len(mapped_bits)} len out: {len(demodlist)}")
+            EPSILON = 0.5
+            count = 0
+            for d,m in zip(demodlist, mapped_bits):
+                if (np.abs(d-m) < EPSILON):
+                    count += 1
+            if count == len(mapped_bits):
+                print("in == out true")
+            else:
+                print("in == out false")
+            return demodlist
 
     def _equalize(self, demod, hest):
         return demod / hest
@@ -181,5 +194,6 @@ if __name__ == "__main__":
     bits = device.generate()
     signal, mapped_bits= device.encode(bits)
     demod = device.decode(signal, mapped_bits)
+    print(bits == demod)
 
 
