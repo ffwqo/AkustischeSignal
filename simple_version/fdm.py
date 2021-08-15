@@ -76,7 +76,7 @@ class FDMSimple:
         result = []
         signal = scipysignal.detrend(signal)
         s = np.abs(fft.fft(signal))
-        idx , _ = find_peaks(s, height=np.max(s)/ 4.0)
+        idx , _ = find_peaks(s, height=np.max(s)/ 3.0)
         idx = idx[:len(idx) // 2] #only the postive part
         freq = fft.fftfreq(len(s), self.t[1] - self.t[0])
         freq = freq[:len(s) // 2]
