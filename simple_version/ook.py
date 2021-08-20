@@ -20,7 +20,7 @@ import itertools
 class OOKSimpleExp():
     _count = 0
 
-    def __init__(self, Ts=30e-03, fs=44000, fc=1800, Nbits=10):
+    def __init__(self, Ts=30e-03, fs=44000, fc=1800, Nbits=10, thres=25):
         """
         Ts: symbol duration
         fs: sampling rate
@@ -33,6 +33,7 @@ class OOKSimpleExp():
         self.Nbits = Nbits
         self.fs = fs
         self.fc = fc
+        self.thres = thres
         self.baud = 1/self.Ts
         self.Ns = int( self.fs / self.baud ) #number of samples points per symbol
         self.N = self.Nbits * self.Ns
@@ -52,6 +53,7 @@ class OOKSimpleExp():
         """
         return np.exp(- 0.5 * (x - t) **2 / s**2)
     def encode(self, bits):
+        print(self.fs)
         """
         bits: bit array of size Nbit
         returns: signal
@@ -61,11 +63,11 @@ class OOKSimpleExp():
         signal = M.ravel() * np.sin(2 * np.pi * self.fc * self.t)
         return signal
 
-        temp = np.zeros(self.N)
-        for i, b in enumerate(bits):
-            temp += b * self._ampl(self.t, (i + 0.5) * self.Ts, self.Ts / 10)
-        signal = M.ravel() * temp * np.sin(2 * np.pi * self.fc * self.t)
-        return signal
+        #temp = np.zeros(self.N)
+        #for i, b in enumerate(bits):
+        #    temp += b * self._ampl(self.t, (i + 0.5) * self.Ts, self.Ts / 10)
+        #signal = M.ravel() * temp * np.sin(2 * np.pi * self.fc * self.t)
+        #return signal
 
     def _testing_encode(self, bits):
         assert(len(bits) == self.Nbits)
@@ -77,25 +79,6 @@ class OOKSimpleExp():
         plt.plot(self.t, temp, "g--")
         return signal
 
-    def dumb_decode(self, signal, bits):
-        """Ensure first bit is zero for a pilot"""
-        Ns = self.Ns
-        Nbits = self.Nbits
-        assert(len(bits == Nbits))
-        pilot_amp = np.average(signal[: Ns])
-        result = [0]
-        for i in range(1, Nbits):
-            avg = np.average(signal[i * Ns: (i+1) * Ns])
-            if avg > pilot_amp:
-                result.append(1)
-            else:
-                result.append(0)
-        print("bits in: ", bits.flatten(), len(bits.flatten()))
-        print("decode: ", result, len(result))
-        print("in==out ", result==list(bits.flatten())) 
-        return result
-
-
     def decode(self, signal, bits):
         """
         signal: signal to encode not saved
@@ -103,11 +86,13 @@ class OOKSimpleExp():
         """
         Ns = self.Ns
         result = []
-        
         for i in range( self.Nbits ):
-            idx, _ = find_peaks(signal[i * Ns : (i+1) * Ns], height=np.max(signal) / 4)
-            if len(idx) > 1:
-                result.append( 1)
+            tseg = self.t[i*self.Ns:(i+1)*self.Ns]
+            sseg = signal[i*self.Ns:(i+1)*self.Ns]
+            x = pow(sum(np.sin(2 * np.pi * self.fc * tseg) * sseg), 2)+pow(sum(np.cos(2 * np.pi * self.fc * tseg) * sseg), 2)
+            print(x)
+            if x > self.thres:
+                result.append(1)
             else:
                 result.append(0)
 
@@ -126,7 +111,7 @@ class OOKSimpleExp():
         plt.plot(self.t, temp, "g--")
         plt.plot(self.t, signal)
         plt.xlabel("t [s]")
-        plt.title(title+"\nbits input: "+ "".join([str(b) for b in bits.flatten()]))
+        plt.title(title)#+"\nbits input: "+ "".join([str(b) for b in bits.flatten()])
         for idx, bit in enumerate(bits):
             plt.vlines(idx * self.Ts, -1.1, 1.1, "r")
         if show:
@@ -161,10 +146,8 @@ def plot_class(obj):
 if __name__ == "__main__":
     ook = OOKSimpleExp()
     bits = ook.generate()
-    bits[0] = 0
-    print(bits)
     signal = ook.encode(bits)
-    result = ook.dumb_decode(signal, bits)
+    result = ook.decode(signal, bits)
     ook.plot(signal, bits)
     plt.show()
 

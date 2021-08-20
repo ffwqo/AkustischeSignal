@@ -24,45 +24,33 @@ import numpy as np
 
 from ook import OOKSimpleExp
 from fdm import FDMSimple
-from ofdm import OFDM
 
 
 #ook
-#Ts=30e-03
-#fs=20000
-#fc=1800
-#Nbits=10
-#device = OOKSimpleExp(Ts, fs, fc, Nbits)
-#device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n"
-#bits = device.generate()
-#bits[0] = 0
-#signal = device.encode(bits)
-#print(signal.shape)
+Ts=2e-06
+fs=200000000
+fc=15000000
+Nbits=10
+thres=10
+device = OOKSimpleExp(Ts, fs, fc, Nbits, thres)
+device_header = f"device: Ts: {Ts} fs: {fs} fc: {fc} Nbits: {Nbits}\n thres:{thres}"
+bits = device.generate()
+signal = device.encode(bits)
+print(signal.shape)
 #device.plot(signal, bits, show=False)
 
 
 #fdm
-#Ts=10e-5
-#fs=20e6
-#fc=50e4
-#df = 2e3
-#Nbits=50
+#Ts=30e-03
+#fs=44000
+#fc=1800
+#df = 100
+#Nbits=10
 #device = FDMSimple(Ts, fs, fc, df, Nbits)
 #device_header = f"Ts: {Ts} fs: {fs} fc: {fc} df: {df} Nbits: {Nbits}"
 #bits = device.generate()
 #signal = device.encode(bits)
 ##device.plot(signal, bits, show=False)
-
-#ofdm
-Nsubcarrier=64
-Npilot=8
-pilot_amp=3+3j
-device = OFDM(Nsubcarrier, Npilot, pilot_amp)
-bits = device.generate()
-signal, mapped_bits = device.encode(bits)
-device.decode(signal, mapped_bits)
-device_header = "Nsubcarrier: {} Npilot: {} pilot_amp: {}".format(Nsubcarrier, Npilot, pilot_amp)
-print(device_header)
 
 
 print(signal.shape)
@@ -70,10 +58,10 @@ data = array("f", signal)
 
 
 
-N = 20000
-scp_fs = 20e6
-scp_record_length = 20000 #len(data)
-gen_fs = 20e6
+N = 12000
+scp_fs = 200000e3
+scp_record_length = 12000 #len(data)
+gen_fs = 200000e3
 gen_amp = 8
 gen_offset = 0
 
@@ -114,10 +102,10 @@ header += device_header
 header += f"{time.asctime()}"
 
 #ook
-Ts=30e-03
-fs=44000
-fc=1800
-Nbits=10
+#Ts=30e-03
+#fs=44000
+#fc=1800
+#Nbits=10
 
 
 if scp and gen:
@@ -142,8 +130,8 @@ if scp and gen:
         scp.start()
         gen.start()
 
-        while not (scp.is_data_ready or scp.is_data_overflow):
-            time.sleep(0.01)
+        while not (scp.is_data_ready):# or scp.is_data_overflow):
+            time.sleep(0.0001)
         if scp.is_data_overflow:
             print("Data overflow")
             #TODO something eror
@@ -177,7 +165,7 @@ if scp and gen:
     bits_decode = device.decode(signal_scp, bits)
     print("bits in: ", bits.flatten())
     print("bits decode: ", bits_decode)
-    device.plot(signal_scp[:len(signal)], bits, title="Ch2 Signal")
+    device.plot(signal_scp[:len(signal)], bits, title="Empfangssignal OOK")
     plt.show()
     device.plot(signal_gen[:len(signal)], bits, title="Ch1 Signal")
     plt.show()
